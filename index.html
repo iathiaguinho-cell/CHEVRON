@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>thIAguinho 🛠️</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; }
+    .col { min-height: 500px; background: white; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .card { background: white; border-left: 5px solid #1d4ed8; border-radius: 8px; padding: 12px; margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); cursor: pointer; }
+    .card.aprovado { border-left-color: #059669; }
+    .card.finalizado { border-left-color: #10b981; }
+    .card.entregue { border-left-color: #6b7280; opacity: 0.8; }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 50; }
+    .modal-content { background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
+    .user-btn { padding: 12px; margin: 4px; background: #f1f5f9; border: 1px solid #ddd; border-radius: 8px; text-align: center; font-weight: 500; cursor: pointer; }
+    .user-btn:hover { background: #e2e8f0; }
+    .btn { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.875rem; }
+    .btn-blue { background: #2563eb; color: white; }
+    .btn-green { background: #059669; color: white; }
+    .btn-red { background: #dc2626; color: white; }
+    .btn-yellow { background: #d97706; color: white; }
+    .status-nav { display: flex; justify-content: space-between; margin-top: 8px; }
+    .file-preview { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+    .file-preview img, .file-preview video { width: 80px; height: 80px; object-fit: cover; border-radius: 6px; }
+    .history-item { padding: 8px; background: #f8f9fa; border-left: 3px solid #3b82f6; margin: 4px 0; border-radius: 4px; font-size: 0.9em; }
+  </style>
+</head>
+<body class="bg-blue-50">
+
+  <!-- Tela de Seleção de Usuário -->
+  <div id="userScreen" class="flex items-center justify-center min-h-screen bg-blue-50 p-4">
+    <div class="bg-white p-8 rounded-xl shadow-md w-full max-w-md text-center">
+      <h1 class="text-2xl font-bold text-blue-800 mb-6">thIAguinho 🛠️</h1>
+      <p class="text-gray-600 mb-6">Selecione seu nome para entrar:</p>
+      <div class="grid grid-cols-1 gap-3">
+        <div onclick="login('Augusto')" class="user-btn">Augusto (Gestor)</div>
+        <div onclick="login('William Barboza')" class="user-btn">William Barboza (Atendente)</div>
+        <div onclick="login('Thiago Ventura Valencio')" class="user-btn">Thiago Ventura Valencio (Atendente)</div>
+        <div onclick="login('Fernando')" class="user-btn">Fernando (Mecânico)</div>
+        <div onclick="login('Gustavo')" class="user-btn">Gustavo (Mecânico)</div>
+        <div onclick="login('Marcelo')" class="user-btn">Marcelo (Mecânico)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- App Principal -->
+  <div id="app" class="hidden">
+    <header class="bg-blue-800 text-white p-4 shadow">
+      <div class="container mx-auto flex justify-between items-center">
+        <h1 class="text-2xl font-bold">thIAguinho 🛠️</h1>
+        <div class="flex gap-4 items-center">
+          <span id="userDisplay" class="text-sm"></span>
+          <button id="logoutButton" class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded">Sair</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="container mx-auto p-4 mt-6">
+      <div class="grid grid-cols-1 md:grid-cols-7 gap-4 text-xs font-bold">
+        <div class="col" data-status="Aguardando Mecânico">
+          <h2 class="font-bold text-blue-800 mb-3">🔧 Aguardando Mecânico</h2>
+          <div class="list"></div>
+        </div>
+        <div class="col" data-status="Em Análise (Aguardando Evidências)">
+          <h2 class="font-bold text-yellow-700 mb-3">📸 Em Análise</h2>
+          <div class="list"></div>
+        </div>
+        <div class="col" data-status="Orçamento Enviado ao Cliente">
+          <h2 class="font-bold text-purple-700 mb-3">📤 Enviado ao Cliente</h2>
+          <div class="list"></div>
+        </div>
+        <div class="col" data-status="Orçamento Aprovado">
+          <h2 class="font-bold text-green-700 mb-3">✅ Aprovado</h2>
+          <div class="list"></div>
+        </div>
+        <div class="col" data-status="Veículo em Manutenção">
+          <h2 class="font-bold text-blue-700 mb-3">🔧 Em Manutenção</h2>
+          <div class="list"></div>
+        </div>
+        <div class="col" data-status="Aguardando Retirada">
+          <h2 class="font-bold text-orange-600 mb-3">🚛 Aguardando Retirada</h2>
+          <div class="list"></div>
+        </div>
+        <div class="col" data-status="Veículo Entregue">
+          <h2 class="font-bold text-gray-700 mb-3">📦 Entregue</h2>
+          <div class="list"></div>
+        </div>
+      </div>
+    </main>
+
+    <button id="addBtn" class="fixed bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full text-2xl shadow-lg">+</button>
+  </div>
+
+  <!-- Modal: Novo Veículo -->
+  <div id="addModal" class="modal">
+    <div class="modal-content">
+      <h3 class="text-xl font-bold mb-4">➕ Novo Veículo</h3>
+      <form id="addForm" class="space-y-4">
+        <input required name="placa" placeholder="Placa" class="w-full p-2 border rounded"/>
+        
+        <label class="block">
+          <span class="text-gray-700">Foto da Placa:</span>
+          <input type="file" name="fotoPlaca" accept="image/*" capture="environment" class="w-full p-2 border rounded mt-1"/>
+        </label>
+        
+        <label class="block">
+          <span class="text-gray-700">Foto do Painel:</span>
+          <input type="file" name="fotoPainel" accept="image/*" capture="environment" class="w-full p-2 border rounded mt-1"/>
+        </label>
+
+        <input required name="modelo" placeholder="Modelo" class="w-full p-2 border rounded"/>
+        <input required name="cliente" placeholder="Cliente" class="w-full p-2 border rounded"/>
+        <input name="telefone" placeholder="Telefone" class="w-full p-2 border rounded"/>
+        <input name="responsavel" placeholder="Responsável" class="w-full p-2 border rounded"/>
+        <textarea name="observacoes" placeholder="Observações gerais" class="w-full p-2 border rounded" rows="2"></textarea>
+        <div class="flex gap-2">
+          <button type="submit" class="btn btn-blue">Salvar</button>
+          <button type="button" id="closeAddModal" class="btn btn-red">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Enviar Evidências -->
+  <div id="evidenceModal" class="modal">
+    <div class="modal-content">
+      <h3 class="text-xl font-bold mb-4">📤 Enviar Evidências - <span id="evidencePlaca"></span></h3>
+      <form id="evidenceForm" class="space-y-4">
+        <input type="hidden" name="placa" />
+        <textarea name="comentario" placeholder="Comentário ou observação sobre as evidências" class="w-full p-2 border rounded" rows="3"></textarea>
+        <label class="block">
+          <span class="text-gray-700">Peças utilizadas ou identificadas:</span>
+          <textarea name="pecas" placeholder="Ex: Amortecedor traseiro, pastilhas dianteiras" class="w-full p-2 border rounded" rows="2"></textarea>
+        </label>
+        <label class="block">
+          <span class="text-gray-700">Serviços realizados ou detectados:</span>
+          <textarea name="servicos" placeholder="Ex: Alinhamento, troca de óleo" class="w-full p-2 border rounded" rows="2"></textarea>
+        </label>
+        <label class="block">
+          <span class="text-gray-700">Fotos e Vídeos:</span>
+          <input type="file" name="midias" accept="image/*,video/*" capture="environment" multiple class="w-full p-2 border rounded mt-1"/>
+        </label>
+        <div id="previewMidias" class="file-preview mt-2"></div>
+        <div class="flex gap-2">
+          <button type="submit" class="btn btn-green">Salvar Evidências</button>
+          <button type="button" id="closeEvidenceModal" class="btn btn-red">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Detalhes do Veículo -->
+  <div id="detailsModal" class="modal">
+    <div class="modal-content">
+      <h3 class="text-xl font-bold mb-4">📋 Detalhes - <span id="detailsPlaca"></span></h3>
+      <div id="detailsContent"></div>
+      <div class="mt-4 flex gap-2">
+        <button id="closeDetailsModal" class="btn btn-red">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Variáveis globais
+    const userScreen = document.getElementById('userScreen');
+    const app = document.getElementById('app');
+    const userDisplay = document.getElementById('userDisplay');
+
+    let usuarioLogado = null;
+    let veiculos = JSON.parse(localStorage.getItem('thiaguinho_veiculos')) || [];
+
+    // Fluxo de status
+    const fluxoStatus = [
+      'Aguardando Mecânico',
+      'Em Análise (Aguardando Evidências)',
+      'Orçamento Enviado ao Cliente',
+      'Orçamento Aprovado',
+      'Veículo em Manutenção',
+      'Aguardando Retirada',
+      'Veículo Entregue'
+    ];
+
+    // Função de login
+    window.login = function(nome) {
+      usuarioLogado = nome;
+      userDisplay.textContent = nome;
+      userScreen.classList.add('hidden');
+      app.classList.remove('hidden');
+      loadVehicles();
+    };
+
+    // Logout
+    document.getElementById('logoutButton').addEventListener('click', () => {
+      app.classList.add('hidden');
+      userScreen.classList.remove('hidden');
+      usuarioLogado = null;
+    });
+
+    // Carregar veículos
+    function loadVehicles() {
+      document.querySelectorAll('.list').forEach(col => col.innerHTML = '');
+      veiculos.forEach(v => {
+        const currentIndex = fluxoStatus.indexOf(v.status);
+        const proximo = currentIndex < fluxoStatus.length - 1 ? fluxoStatus[currentIndex + 1] : null;
+        const anterior = currentIndex > 0 ? fluxoStatus[currentIndex - 1] : null;
+
+        const col = document.querySelector(`.col[data-status="${v.status}"] .list`);
+        if (col) {
+          const card = document.createElement('div');
+          card.className = `card ${v.status === 'Orçamento Aprovado' ? 'aprovado' : ''} ${v.status === 'Aguardando Retirada' ? 'finalizado' : ''} ${v.status === 'Veículo Entregue' ? 'entregue' : ''}`;
+          card.dataset.placa = v.placa;
+          card.innerHTML = `
+            <b>${v.placa}</b> - ${v.modelo}<br>
+            <small>Cliente: ${v.cliente}</small><br>
+            <small>Resp: ${v.responsavel || '–'}</small>
+            <div class="status-nav">
+              ${anterior ? `<button class="btn btn-blue text-xs">🔙</button>` : `<span></span>`}
+              ${proximo ? `<button class="btn btn-blue text-xs">Avançar 🔜</button>` : `<span></span>`}
+            </div>
+            <div class="mt-2">
+              <button class="btn btn-blue text-xs">Detalhes</button>
+              <button class="btn btn-yellow text-xs mt-1 w-full">Anexar Fotos</button>
+            </div>
+          `;
+
+          // Corrigindo eventos
+          setTimeout(() => {
+            card.querySelector('.btn-blue')?.addEventListener('click', (e) => {
+              e.stopPropagation();
+              if (proximo) mudarStatus(v.placa, proximo);
+            });
+
+            card.querySelector('.btn-yellow')?.addEventListener('click', (e) => {
+              e.stopPropagation();
+              openEvidenceModal(v.placa);
+            });
+
+            card.addEventListener('click', () => {
+              openDetailsModal(v.placa);
+            });
+          }, 100);
+
+          col.appendChild(card);
+        }
+      });
+    }
+
+    // Mudar status
+    window.mudarStatus = function(placa, novoStatus) {
+      const veiculo = veiculos.find(v => v.placa === placa);
+      if (veiculo && novoStatus) {
+        veiculo.status = novoStatus;
+        veiculo.historico = veiculo.historico || [];
+        veiculo.historico.push({
+          status: novoStatus,
+           new Date().toLocaleString(),
+          nome: usuarioLogado
+        });
+        salvarVeiculos();
+        loadVehicles();
+      }
+    };
+
+    // Abrir detalhes
+    window.openDetailsModal = function(placa) {
+      const veiculo = veiculos.find(v => v.placa === placa);
+      if (!veiculo) return;
+
+      document.getElementById('detailsPlaca').textContent = veiculo.placa;
+      const content = document.getElementById('detailsContent');
+
+      // Montar HTML das fotos
+      let fotosHtml = '';
+      if (veiculo.fotoPlaca || veiculo.fotoPainel) {
+        fotosHtml += '<h4 class="font-bold mt-4">📸 Fotos do Veículo</h4>';
+        if (veiculo.fotoPlaca) {
+          fotosHtml += `<p><b>Foto da Placa:</b></p><img src="${veiculo.fotoPlaca}" class="w-full rounded mt-1">`;
+        }
+        if (veiculo.fotoPainel) {
+          fotosHtml += `<p><b>Foto do Painel:</b></p><img src="${veiculo.fotoPainel}" class="w-full rounded mt-1">`;
+        }
+      }
+
+      // Listar visitas
+      let visitasHtml = '';
+      if (veiculo.visitas && veiculo.visitas.length > 0) {
+        veiculo.visitas.sort((a, b) => b.data - a.data).forEach(v => {
+          visitasHtml += `
+            <div class="mt-4">
+              <h4 class="font-bold">📅 Visita: ${new Date(v.data).toLocaleString()}</h4>
+              <p><b>Peças:</b> ${v.pecas || '–'}</p>
+              <p><b>Serviços:</b> ${v.servicos || '–'}</p>
+              <p><b>Comentário:</b> ${v.comentario || '–'}</p>
+              ${v.files && v.files.length > 0 ? '<p><b>Mídias:</b></p>' : ''}
+              <div class="file-preview">`;
+          v.files.forEach(file => {
+            if (file.type.startsWith('image/')) {
+              visitasHtml += `<img src="${file.url}" class="w-20 h-20 object-cover rounded">`;
+            } else if (file.type.startsWith('video/')) {
+              visitasHtml += `<video controls class="w-20 h-20 object-cover rounded"><source src="${file.url}"></video>`;
+            }
+          });
+          visitasHtml += `</div></div>`;
+        });
+      } else {
+        visitasHtml = '<p class="text-gray-500">Nenhuma evidência anexada ainda.</p>';
+      }
+
+      content.innerHTML = `
+        <p><b>Modelo:</b> ${veiculo.modelo}</p>
+        <p><b>Cliente:</b> ${veiculo.cliente}</p>
+        <p><b>Telefone:</b> ${veiculo.telefone}</p>
+        <p><b>Responsável:</b> ${veiculo.responsavel}</p>
+        <p><b>Status:</b> ${veiculo.status}</p>
+        <p><b>Entrada:</b> ${veiculo.entrada}</p>
+        <p><b>Observações:</b> ${veiculo.observacoes || '–'}</p>
+
+        <h4 class="font-bold mt-4">🔧 Histórico de Status</h4>
+        ${veiculo.historico && veiculo.historico.length > 0 
+          ? veiculo.historico.map(h => `<div class="history-item">${h.status} por ${h.nome} em ${h.data}</div>`).join('')
+          : '<p class="text-gray-500">Sem histórico</p>'
+        }
+
+        ${fotosHtml}
+        <h4 class="font-bold mt-4">📸 Evidências por Visita</h4>
+        ${visitasHtml}
+      `;
+      document.getElementById('detailsModal').style.display = 'flex';
+    };
+
+    // Abrir modal de evidências
+    window.openEvidenceModal = function(placa) {
+      document.getElementById('evidencePlaca').textContent = placa;
+      document.getElementById('evidenceForm').placa.value = placa;
+      document.getElementById('previewMidias').innerHTML = '';
+      document.getElementById('evidenceModal').style.display = 'flex';
+    };
+
+    // Preview de mídias
+    document.getElementById('evidenceForm').midias.addEventListener('change', function() {
+      const preview = document.getElementById('previewMidias');
+      preview.innerHTML = '';
+      Array.from(this.files).forEach(file => {
+        const el = document.createElement(file.type.startsWith('video/') ? 'video' : 'img');
+        el.src = URL.createObjectURL(file);
+        el.controls = file.type.startsWith('video/');
+        el.style.width = '80px';
+        el.style.height = '80px';
+        el.style.objectFit = 'cover';
+        el.style.borderRadius = '6px';
+        preview.appendChild(el);
+      });
+    });
+
+    // Enviar evidências
+    document.getElementById('evidenceForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const placa = this.placa.value;
+      const comentario = this.comentario.value;
+      const pecas = this.pecas.value;
+      const servicos = this.servicos.value;
+      const files = Array.from(this.midias.files);
+      const now = new Date();
+
+      const veiculo = veiculos.find(v => v.placa === placa);
+      if (veiculo) {
+        veiculo.visitas = veiculo.visitas || [];
+        veiculo.historico = veiculo.historico || [];
+        veiculo.historico.push({
+          status: 'Evidência anexada',
+           now.toLocaleString(),
+          nome: usuarioLogado
+        });
+
+        // Salvar arquivos em base64
+        const filePromises = files.map(file => {
+          const reader = new FileReader();
+          return new Promise(resolve => {
+            reader.onload = () => {
+              resolve({
+                name: file.name,
+                type: file.type,
+                url: reader.result,
+                size: file.size
+              });
+            };
+            reader.readAsDataURL(file);
+          });
+        });
+
+        Promise.all(filePromises).then(fileObjects => {
+          veiculo.visitas.push({
+             now.getTime(),
+            comentario,
+            pecas,
+            servicos,
+            files: fileObjects
+          });
+
+          salvarVeiculos();
+          alert(`✅ Evidências da visita salvas! ${files.length} arquivo(s) foram anexados.`);
+          document.getElementById('evidenceModal').style.display = 'none';
+          this.reset();
+          loadVehicles();
+        });
+      }
+    });
+
+    // Salvar veículos
+    function salvarVeiculos() {
+      localStorage.setItem('thiaguinho_veiculos', JSON.stringify(veiculos));
+    }
+
+    // Adicionar veículo
+    document.getElementById('addBtn').addEventListener('click', () => {
+      document.getElementById('addModal').style.display = 'flex';
+    });
+
+    document.getElementById('addForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const fd = new FormData(this);
+      const vehicle = {
+        placa: fd.get('placa'),
+        modelo: fd.get('modelo'),
+        cliente: fd.get('cliente'),
+        telefone: fd.get('telefone'),
+        responsavel: fd.get('responsavel'),
+        observacoes: fd.get('observacoes'),
+        status: 'Aguardando Mecânico',
+        entrada: new Date().toLocaleDateString(),
+        historico: [],
+        visitas: []
+      };
+
+      // Salvar fotos da placa e painel em base64
+      const fotoPlaca = fd.get('fotoPlaca');
+      const fotoPainel = fd.get('fotoPainel');
+
+      if (fotoPlaca && fotoPlaca.size > 0) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          vehicle.fotoPlaca = e.target.result;
+          if (fotoPainel && fotoPainel.size > 0) {
+            const reader2 = new FileReader();
+            reader2.onload = function(e) {
+              vehicle.fotoPainel = e.target.result;
+              veiculos.push(vehicle);
+              salvarVeiculos();
+              document.getElementById('addModal').style.display = 'none';
+              this.reset();
+              loadVehicles();
+            }.bind(this);
+            reader2.readAsDataURL(fotoPainel);
+          } else {
+            veiculos.push(vehicle);
+            salvarVeiculos();
+            document.getElementById('addModal').style.display = 'none';
+            this.reset();
+            loadVehicles();
+          }
+        }.bind(this);
+        reader.readAsDataURL(fotoPlaca);
+      } else if (fotoPainel && fotoPainel.size > 0) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          vehicle.fotoPainel = e.target.result;
+          veiculos.push(vehicle);
+          salvarVeiculos();
+          document.getElementById('addModal').style.display = 'none';
+          this.reset();
+          loadVehicles();
+        }.bind(this);
+        reader.readAsDataURL(fotoPainel);
+      } else {
+        veiculos.push(vehicle);
+        salvarVeiculos();
+        document.getElementById('addModal').style.display = 'none';
+        this.reset();
+        loadVehicles();
+      }
+    });
+
+    // Fechar modais
+    document.getElementById('closeAddModal').addEventListener('click', () => {
+      document.getElementById('addModal').style.display = 'none';
+    });
+
+    document.getElementById('closeEvidenceModal').addEventListener('click', () => {
+      document.getElementById('evidenceModal').style.display = 'none';
+    });
+
+    document.getElementById('closeDetailsModal').addEventListener('click', () => {
+      document.getElementById('detailsModal').style.display = 'none';
+    });
+
+    window.addEventListener('click', (e) => {
+      if (e.target === document.getElementById('addModal')) document.getElementById('addModal').style.display = 'none';
+      if (e.target === document.getElementById('evidenceModal')) document.getElementById('evidenceModal').style.display = 'none';
+      if (e.target === document.getElementById('detailsModal')) document.getElementById('detailsModal').style.display = 'none';
+    });
+
+    // Inicializar
+    if (veiculos.length === 0) {
+      veiculos.push({
+        placa: 'ABC1234',
+        modelo: 'Gol 2018',
+        cliente: 'José Silva',
+        telefone: '(11) 99999-8888',
+        responsavel: 'Carlos',
+        observacoes: '',
+        status: 'Aguardando Mecânico',
+        entrada: new Date().toLocaleDateString(),
+        historico: [],
+        visitas: []
+      });
+      salvarVeiculos();
+    }
+
+    // Carregar inicial
+    if (!usuarioLogado && !userScreen.classList.contains('hidden')) {
+      userScreen.classList.remove('hidden');
+    } else {
+      app.classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>
