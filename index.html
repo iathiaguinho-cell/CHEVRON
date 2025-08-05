@@ -349,4 +349,182 @@
         el.controls = file.type.startsWith('video/');
         el.style.width = '80px';
         el.style.height = '80px';
-        el.style.objectFit =…
+        el.style.objectFit = 'cover';
+        el.style.borderRadius = '6px';
+        preview.appendChild(el);
+      });
+    });
+
+    // Enviar evidências
+    document.getElementById('evidenceForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const placa = this.placa.value;
+      const comentario = this.comentario.value;
+      const pecas = this.pecas.value;
+      const servicos = this.servicos.value;
+      const files = Array.from(this.midias.files);
+      const now = new Date();
+
+      const veiculo = veiculos.find(v => v.placa === placa);
+      if (veiculo) {
+        veiculo.visitas = veiculo.visitas || [];
+        veiculo.historico = veiculo.historico || [];
+        veiculo.historico.push({
+          status: 'Evidência anexada',
+           now.toLocaleString(),
+          nome: usuarioLogado
+        });
+
+        // Salvar arquivos em base64
+        const filePromises = files.map(file => {
+          const reader = new FileReader();
+          return new Promise(resolve => {
+            reader.onload = () => {
+              resolve({
+                name: file.name,
+                type: file.type,
+                url: reader.result,
+                size: file.size
+              });
+            };
+            reader.readAsDataURL(file);
+          });
+        });
+
+        Promise.all(filePromises).then(fileObjects => {
+          veiculo.visitas.push({
+             now.getTime(),
+            comentario,
+            pecas,
+            servicos,
+            files: fileObjects
+          });
+
+          salvarVeiculos();
+          alert(`✅ Evidências da visita salvas! ${files.length} arquivo(s) foram anexados.`);
+          document.getElementById('evidenceModal').style.display = 'none';
+          this.reset();
+          loadVehicles();
+        });
+      }
+    });
+
+    // Salvar veículos
+    function salvarVeiculos() {
+      localStorage.setItem('thiaguinho_veiculos', JSON.stringify(veiculos));
+    }
+
+    // Adicionar veículo
+    document.getElementById('addBtn').addEventListener('click', () => {
+      document.getElementById('addModal').style.display = 'flex';
+    });
+
+    document.getElementById('addForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const fd = new FormData(this);
+      const vehicle = {
+        placa: fd.get('placa'),
+        modelo: fd.get('modelo'),
+        cliente: fd.get('cliente'),
+        telefone: fd.get('telefone'),
+        responsavel: fd.get('responsavel'),
+        observacoes: fd.get('observacoes'),
+        status: 'Aguardando Mecânico',
+        entrada: new Date().toLocaleDateString(),
+        historico: [],
+        visitas: []
+      };
+
+      // Salvar fotos da placa e painel em base64
+      const fotoPlaca = fd.get('fotoPlaca');
+      const fotoPainel = fd.get('fotoPainel');
+
+      if (fotoPlaca && fotoPlaca.size > 0) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          vehicle.fotoPlaca = e.target.result;
+          if (fotoPainel && fotoPainel.size > 0) {
+            const reader2 = new FileReader();
+            reader2.onload = function(e) {
+              vehicle.fotoPainel = e.target.result;
+              veiculos.push(vehicle);
+              salvarVeiculos();
+              document.getElementById('addModal').style.display = 'none';
+              this.reset();
+              loadVehicles();
+            }.bind(this);
+            reader2.readAsDataURL(fotoPainel);
+          } else {
+            veiculos.push(vehicle);
+            salvarVeiculos();
+            document.getElementById('addModal').style.display = 'none';
+            this.reset();
+            loadVehicles();
+          }
+        }.bind(this);
+        reader.readAsDataURL(fotoPlaca);
+      } else if (fotoPainel && fotoPainel.size > 0) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          vehicle.fotoPainel = e.target.result;
+          veiculos.push(vehicle);
+          salvarVeiculos();
+          document.getElementById('addModal').style.display = 'none';
+          this.reset();
+          loadVehicles();
+        }.bind(this);
+        reader.readAsDataURL(fotoPainel);
+      } else {
+        veiculos.push(vehicle);
+        salvarVeiculos();
+        document.getElementById('addModal').style.display = 'none';
+        this.reset();
+        loadVehicles();
+      }
+    });
+
+    // Fechar modais
+    document.getElementById('closeAddModal').addEventListener('click', () => {
+      document.getElementById('addModal').style.display = 'none';
+    });
+
+    document.getElementById('closeEvidenceModal').addEventListener('click', () => {
+      document.getElementById('evidenceModal').style.display = 'none';
+    });
+
+    document.getElementById('closeDetailsModal').addEventListener('click', () => {
+      document.getElementById('detailsModal').style.display = 'none';
+    });
+
+    window.addEventListener('click', (e) => {
+      if (e.target === document.getElementById('addModal')) document.getElementById('addModal').style.display = 'none';
+      if (e.target === document.getElementById('evidenceModal')) document.getElementById('evidenceModal').style.display = 'none';
+      if (e.target === document.getElementById('detailsModal')) document.getElementById('detailsModal').style.display = 'none';
+    });
+
+    // Inicializar
+    if (veiculos.length === 0) {
+      veiculos.push({
+        placa: 'ABC1234',
+        modelo: 'Gol 2018',
+        cliente: 'José Silva',
+        telefone: '(11) 99999-8888',
+        responsavel: 'Carlos',
+        observacoes: '',
+        status: 'Aguardando Mecânico',
+        entrada: new Date().toLocaleDateString(),
+        historico: [],
+        visitas: []
+      });
+      salvarVeiculos();
+    }
+
+    // Carregar inicial
+    if (!usuarioLogado && !userScreen.classList.contains('hidden')) {
+      userScreen.classList.remove('hidden');
+    } else {
+      app.classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>
