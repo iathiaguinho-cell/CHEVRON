@@ -15,7 +15,6 @@
 </head>
 <body class="bg-gray-100">
 
-  <!-- NOVA TELA DE LOGIN -->
   <div id="userScreen" class="flex items-center justify-center min-h-screen p-4">
     <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-sm text-center">
       <h1 class="text-3xl font-bold text-gray-800 mb-2">CHEVRON</h1>
@@ -23,7 +22,7 @@
       <form id="loginForm" class="mt-8 text-left">
         <div class="mb-4">
           <label for="userSelect" class="block text-sm font-medium text-gray-700 mb-1">Usuário</label>
-          <select id="userSelect" class="p-2 border rounded w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+          <select id="userSelect" required class="p-2 border rounded w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
             <option value="">Selecione seu usuário...</option>
           </select>
         </div>
@@ -39,7 +38,6 @@
     </div>
   </div>
 
-  <!-- APP PRINCIPAL (Permanece Oculto até o Login) -->
   <div id="app" class="hidden">
     <header class="bg-white shadow-md sticky top-0 z-40">
       <div id="attention-panel-container">
@@ -73,7 +71,6 @@
     </main>
   </div>
 
-  <!-- MODAL PARA CRIAR/EDITAR O.S. -->
   <div id="osModal" class="modal fixed inset-0 z-50 hidden items-center justify-center p-4">
     <div class="modal-content w-full max-w-lg">
       <div class="modal-header">
@@ -140,7 +137,6 @@
     </div>
   </div>
 
-  <!-- MODAL DE DETALHES DA O.S. -->
   <div id="detailsModal" class="modal fixed inset-0 z-50 hidden items-center justify-center p-4">
     <div class="modal-content w-full max-w-6xl">
       <div class="modal-header">
@@ -149,6 +145,7 @@
           <button class="btn-close-modal text-3xl text-gray-400 hover:text-gray-600">&times;</button>
         </div>
       </div>
+      
       <div class="modal-body">
         <div class="os-details-container">
           <div class="os-header">
@@ -169,19 +166,23 @@
                     <div id="responsible-delivery">N/D</div>
                 </div>
             </div>
-            <div id="detailsObservacoes" class="hidden mt-4 pt-4 border-t border-gray-200"></div>
+            <div id="detailsObservacoes" class="hidden mt-4 pt-4 border-t border-gray-200">
+            </div>
           </div>
+          
           <div class="os-content">
             <div class="space-y-6">
               <div class="bg-white rounded-lg shadow p-4">
                 <h3 class="section-title">Galeria de Mídia</h3>
                 <div id="thumbnail-grid" class="grid grid-cols-4 sm:grid-cols-6 gap-2 mt-4"></div>
               </div>
+              
               <div class="bg-white rounded-lg shadow p-4">
                 <h3 class="section-title">Histórico da O.S.</h3>
                 <div id="timelineContainer" class="timeline mt-4 space-y-6"></div>
               </div>
             </div>
+            
             <div class="os-actions-section space-y-6">
               <div class="bg-white rounded-lg shadow p-4">
                   <h3 class="section-title">Adicionar Atualização</h3>
@@ -215,15 +216,6 @@
                     <button id="btn-stay" class="w-full btn bg-gray-400 hover:bg-gray-500 text-white">Apenas Atualizar</button>
                   </div>
               </div>
-              <!-- NOVA SEÇÃO DE PRIORIDADE -->
-              <div id="priority-section" class="bg-white rounded-lg shadow p-4 hidden">
-                  <h4 class="font-semibold text-gray-700 mb-2">Alterar Urgência</h4>
-                  <div id="priority-selector" class="flex justify-around">
-                      <button data-priority="verde" class="priority-btn p-2 rounded-full border-2 border-transparent"><div class="w-6 h-6 bg-green-500 rounded-full"></div></button>
-                      <button data-priority="amarelo" class="priority-btn p-2 rounded-full border-2 border-transparent"><div class="w-6 h-6 bg-yellow-500 rounded-full"></div></button>
-                      <button data-priority="vermelho" class="priority-btn p-2 rounded-full border-2 border-transparent"><div class="w-6 h-6 bg-red-500 rounded-full"></div></button>
-                  </div>
-              </div>
               <div class="bg-white rounded-lg shadow p-4">
                   <form id="kmUpdateForm">
                     <h4 class="font-semibold text-gray-700 mb-2">Atualizar KM</h4>
@@ -233,7 +225,7 @@
                     </div>
                   </form>
               </div>
-              <div id="export-section" class="bg-white rounded-lg shadow p-4 hidden">
+              <div class="bg-white rounded-lg shadow p-4">
                   <button id="exportOsBtn" class="w-full btn bg-gray-700 hover:bg-gray-800 text-white">
                     <i class='bx bx-printer'></i> Exportar / Imprimir O.S.
                   </button>
@@ -250,11 +242,39 @@
     </div>
   </div>
 
-  <div id="lightbox" class="modal fixed inset-0 z-[100] hidden items-center justify-center p-4"><!-- Conteúdo do lightbox --></div>
-  <div id="confirmDeleteModal" class="modal fixed inset-0 z-[101] hidden items-center justify-center p-4"><!-- Conteúdo do modal --></div>
+  <div id="lightbox" class="modal fixed inset-0 z-[100] hidden items-center justify-center p-4">
+    <div class="absolute inset-0" id="lightbox-close-bg"></div>
+    <div class="relative bg-black bg-opacity-50 p-4 rounded-lg max-w-4xl w-full">
+        <div id="lightbox-content" class="flex items-center justify-center min-h-[300px]"></div>
+        <button id="lightbox-close" class="absolute -top-2 -right-2 bg-white text-black rounded-full h-8 w-8 flex items-center justify-center">&times;</button>
+        <button id="lightbox-prev" class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/50 hover:bg-white text-black p-2 rounded-full"><i class='bx bx-chevron-left text-2xl'></i></button>
+        <button id="lightbox-next" class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/50 hover:bg-white text-black p-2 rounded-full"><i class='bx bx-chevron-right text-2xl'></i></button>
+        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-4">
+            <a id="lightbox-download" href="#" download class="bg-blue-600 text-white p-2 rounded-full"><i class='bx bxs-download'></i></a>
+            <button id="lightbox-copy" class="bg-blue-600 text-white p-2 rounded-full"><i class='bx bx-copy'></i></button>
+        </div>
+    </div>
+  </div>
+
+  <div id="confirmDeleteModal" class="modal fixed inset-0 z-[101] hidden items-center justify-center p-4">
+    <div class="modal-content w-full max-w-md">
+        <div class="modal-header">
+            <h2 class="text-xl font-bold text-red-600 flex items-center gap-2"><i class='bx bxs-error-circle'></i>Confirmar Exclusão</h2>
+        </div>
+        <div class="modal-body">
+            <p id="confirmDeleteText" class="text-gray-700">Você tem certeza que deseja excluir esta Ordem de Serviço? Esta ação não pode ser desfeita.</p>
+        </div>
+        <div class="modal-footer">
+            <button id="cancelDeleteBtn" class="btn bg-gray-200 hover:bg-gray-300 text-gray-800">Cancelar</button>
+            <button id="confirmDeleteBtn" class="btn bg-red-600 hover:bg-red-700 text-white">Sim, Excluir</button>
+        </div>
+    </div>
+  </div>
+
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
   <script src="js/app.js"></script>
   
 </body>
