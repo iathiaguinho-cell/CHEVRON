@@ -134,6 +134,38 @@ document.addEventListener('DOMContentLoaded', () => {
   
   const formatStatus = (status) => status.replace(/-/g, ' ');
 
+  const logoutUser = () => {
+    localStorage.removeItem('currentUser');
+    location.reload();
+  };
+  
+  // *** NOVA FUNÇÃO DE AGENDAMENTO DE LOGOUT ***
+  const scheduleDailyLogout = () => {
+    const now = new Date();
+    const logoutTime = new Date();
+    
+    // Define o horário do logout para 19:00:00 do dia atual
+    logoutTime.setHours(19, 0, 0, 0);
+
+    // Se o horário atual já passou das 19h, agenda para o dia seguinte
+    if (now > logoutTime) {
+      logoutTime.setDate(logoutTime.getDate() + 1);
+    }
+    
+    const timeUntilLogout = logoutTime.getTime() - now.getTime();
+    
+    console.log(`Logout automático agendado para: ${logoutTime.toLocaleString('pt-BR')}`);
+
+    setTimeout(() => {
+      // Apenas desloga se houver uma sessão ativa, para evitar loops
+      if (localStorage.getItem('currentUser')) {
+        showNotification('Sessão encerrada por segurança.', 'success');
+        // Adiciona um pequeno delay para o usuário ver a notificação antes de recarregar
+        setTimeout(logoutUser, 2000); 
+      }
+    }, timeUntilLogout);
+  };
+
   const loginUser = (user) => {
     currentUser = user;
     localStorage.setItem('currentUser', JSON.stringify(user));
@@ -143,6 +175,9 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeKanban();
     listenToServiceOrdersOptimized(); 
     listenToNotifications();
+    
+    // *** Inicia o agendamento do logout automático ***
+    scheduleDailyLogout();
   };
   
   const initializeLoginScreen = () => {
@@ -161,11 +196,6 @@ document.addEventListener('DOMContentLoaded', () => {
         option.textContent = user.name;
         userSelect.appendChild(option);
     });
-  };
-  
-  const logoutUser = () => {
-    localStorage.removeItem('currentUser');
-    location.reload();
   };
 
   const initializeKanban = () => {
@@ -726,5 +756,6 @@ document.addEventListener('DOMContentLoaded', () => {
     navigator.clipboard.writeText(media.url).then(() => { showNotification('URL copiada para a área de transferência!'); });
   });
   
+  // --- INICIALIZAÇÃO DO LOGIN ---
   initializeLoginScreen();
 });
