@@ -47,7 +47,7 @@ function showNotification(message, type = 'success') {
 }
 
 /* ==================================================================
-LÓGICA DE UPLOAD DE ARQUIVOS
+LÓGICA DE UPLOAD DE ARQUIVOS (AGORA COM CLOUDINARY)
 ==================================================================
 */
 const uploadFileToCloudinary = async (file) => {
@@ -67,7 +67,7 @@ const uploadFileToCloudinary = async (file) => {
     }
 
     const data = await response.json();
-    return { url: data.secure_url, public_id: data.public_id };
+    return data.secure_url; // Retorna a URL segura do arquivo
   } catch (error) {
     console.error("Erro no upload para o Cloudinary:", error);
     throw error;
@@ -89,31 +89,59 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentLightboxIndex = 0;
   let filesToUpload = [];
   let appStartTime = Date.now();
-  let USERS = []; // Será carregado do Firebase
+
+  const USERS = [
+    { name: 'Augusto', role: 'Gestor', password: 'augusto' },
+    { name: 'William Barbosa', role: 'Atendente', password: 'barboza' },
+    { name: 'Thiago Ventura Valencio', role: 'Atendente', password: 'thiago' },
+    { name: 'Fernando', role: 'Mecânico', password: 'fernando' },
+    { name: 'Gustavo', role: 'Mecânico', password: 'gustavo' },
+    { name: 'Marcelo', role: 'Mecânico', password: 'marcelo' }
+  ];
 
   const STATUS_LIST = [ 'Aguardando-Mecanico', 'Em-Analise', 'Orcamento-Enviado', 'Aguardando-Aprovacao', 'Servico-Autorizado', 'Em-Execucao', 'Finalizado-Aguardando-Retirada', 'Entregue' ];
   const ATTENTION_STATUSES = { 'Aguardando-Mecanico': { label: 'AGUARDANDO MECÂNICO', color: 'yellow', blinkClass: 'blinking-aguardando' }, 'Servico-Autorizado': { label: 'SERVIÇO AUTORIZADO', color: 'green', blinkClass: 'blinking-autorizado' } };
   const LED_TRIGGER_STATUSES = ['Aguardando-Mecanico', 'Servico-Autorizado'];
 
   // Seletores de elementos DOM
-  const userScreen = document.getElementById('userScreen'), app = document.getElementById('app'), loginForm = document.getElementById('loginForm'), userSelect = document.getElementById('userSelect'), passwordInput = document.getElementById('passwordInput'), loginError = document.getElementById('loginError'), kanbanBoard = document.getElementById('kanbanBoard'), addOSBtn = document.getElementById('addOSBtn'), logoutButton = document.getElementById('logoutButton'), osModal = document.getElementById('osModal'), osForm = document.getElementById('osForm'), detailsModal = document.getElementById('detailsModal'), logForm = document.getElementById('logForm'), kmUpdateForm = document.getElementById('kmUpdateForm'), attentionPanel = document.getElementById('attention-panel'), attentionPanelContainer = document.getElementById('attention-panel-container'), togglePanelBtn = document.getElementById('toggle-panel-btn'), lightbox = document.getElementById('lightbox'), mediaInput = document.getElementById('media-input'), openCameraBtn = document.getElementById('openCameraBtn'), openGalleryBtn = document.getElementById('openGalleryBtn'), alertLed = document.getElementById('alert-led'), postLogActions = document.getElementById('post-log-actions'), deleteOsBtn = document.getElementById('deleteOsBtn'), confirmDeleteModal = document.getElementById('confirmDeleteModal'), confirmDeleteText = document.getElementById('confirmDeleteText'), cancelDeleteBtn = document.getElementById('cancelDeleteBtn'), confirmDeleteBtn = document.getElementById('confirmDeleteBtn'), globalSearchInput = document.getElementById('globalSearchInput'), globalSearchResults = document.getElementById('globalSearchResults'), timelineContainer = document.getElementById('timelineContainer'), confirmDeleteLogModal = document.getElementById('confirmDeleteLogModal'), confirmDeleteLogText = document.getElementById('confirmDeleteLogText'), cancelDeleteLogBtn = document.getElementById('cancelDeleteLogBtn'), confirmDeleteLogBtn = document.getElementById('confirmDeleteLogBtn');
-  // Seletores do Painel do Gestor
-  const adminPanelBtn = document.getElementById('adminPanelBtn'), adminModal = document.getElementById('adminModal'), adminTabs = document.querySelectorAll('.admin-tab'), addUserForm = document.getElementById('addUserForm'), userList = document.getElementById('userList'), changePasswordModal = document.getElementById('changePasswordModal'), changePasswordForm = document.getElementById('changePasswordForm'), cancelChangePasswordBtn = document.getElementById('cancelChangePasswordBtn'), userLabelForPasswordChange = document.getElementById('userLabelForPasswordChange'), generateReportBtn = document.getElementById('generateReportBtn'), exportPdfZipBtn = document.getElementById('exportPdfZipBtn'), reportOutput = document.getElementById('reportOutput');
-  const confirmDeleteMediaModal = document.getElementById('confirmDeleteMediaModal'), cancelDeleteMediaBtn = document.getElementById('cancelDeleteMediaBtn'), confirmDeleteMediaBtn = document.getElementById('confirmDeleteMediaBtn');
+  const userScreen = document.getElementById('userScreen');
+  const app = document.getElementById('app');
+  const loginForm = document.getElementById('loginForm');
+  const userSelect = document.getElementById('userSelect');
+  const passwordInput = document.getElementById('passwordInput');
+  const loginError = document.getElementById('loginError');
+  const kanbanBoard = document.getElementById('kanbanBoard');
+  const addOSBtn = document.getElementById('addOSBtn');
+  const logoutButton = document.getElementById('logoutButton');
+  const osModal = document.getElementById('osModal');
+  const osForm = document.getElementById('osForm');
+  const detailsModal = document.getElementById('detailsModal');
+  const logForm = document.getElementById('logForm');
+  const kmUpdateForm = document.getElementById('kmUpdateForm');
+  const attentionPanel = document.getElementById('attention-panel');
+  const attentionPanelContainer = document.getElementById('attention-panel-container');
+  const togglePanelBtn = document.getElementById('toggle-panel-btn');
+  const lightbox = document.getElementById('lightbox');
+  const mediaInput = document.getElementById('media-input');
+  const openCameraBtn = document.getElementById('openCameraBtn');
+  const openGalleryBtn = document.getElementById('openGalleryBtn');
+  const alertLed = document.getElementById('alert-led');
+  const postLogActions = document.getElementById('post-log-actions');
+  const deleteOsBtn = document.getElementById('deleteOsBtn');
+  const confirmDeleteModal = document.getElementById('confirmDeleteModal');
+  const confirmDeleteText = document.getElementById('confirmDeleteText');
+  const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+  const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+  const globalSearchInput = document.getElementById('globalSearchInput');
+  const globalSearchResults = document.getElementById('globalSearchResults');
+  const timelineContainer = document.getElementById('timelineContainer');
+  const confirmDeleteLogModal = document.getElementById('confirmDeleteLogModal');
+  const confirmDeleteLogText = document.getElementById('confirmDeleteLogText');
+  const cancelDeleteLogBtn = document.getElementById('cancelDeleteLogBtn');
+  const confirmDeleteLogBtn = document.getElementById('confirmDeleteLogBtn');
 
-  const formatStatus = (status) => status ? status.replace(/-/g, ' ') : '';
-  
-  const hasPermission = (level) => {
-    if (!currentUser) return false;
-    const roles = {
-        'Atendente': 1,
-        'Mecânico': 1,
-        'Gestor': 2,
-        'Gestor de Sistema': 3
-    };
-    const requiredLevel = level === 'admin' ? 3 : (level === 'manager' ? 2 : 1);
-    return roles[currentUser.role] >= requiredLevel;
-  }
+
+  const formatStatus = (status) => status.replace(/-/g, ' ');
 
   const logoutUser = () => {
     localStorage.removeItem('currentUser');
@@ -123,12 +151,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const scheduleDailyLogout = () => {
     const now = new Date();
     const logoutTime = new Date();
+
     logoutTime.setHours(19, 0, 0, 0);
+
     if (now > logoutTime) {
       logoutTime.setDate(logoutTime.getDate() + 1);
     }
+
     const timeUntilLogout = logoutTime.getTime() - now.getTime();
+
     console.log(`Logout automático agendado para: ${logoutTime.toLocaleString('pt-BR')}`);
+
     setTimeout(() => {
       if (localStorage.getItem('currentUser')) {
         showNotification('Sessão encerrada por segurança.', 'success');
@@ -141,7 +174,6 @@ document.addEventListener('DOMContentLoaded', () => {
     currentUser = user;
     localStorage.setItem('currentUser', JSON.stringify(user));
     document.getElementById('currentUserName').textContent = user.name;
-    if(hasPermission('admin')) { adminPanelBtn.classList.remove('hidden'); }
     userScreen.classList.add('hidden');
     app.classList.remove('hidden');
     initializeKanban();
@@ -153,15 +185,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const initializeLoginScreen = () => {
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
-        // Precisa verificar se o usuário ainda existe no BD e se os dados estão atualizados
-        const localUser = JSON.parse(storedUser);
-        const userInDB = USERS.find(u => u.id === localUser.id);
-        if (userInDB) {
-            loginUser(userInDB);
-            return;
-        } else {
-             localStorage.removeItem('currentUser'); // Limpa usuário inválido
-        }
+        loginUser(JSON.parse(storedUser));
+        return;
     }
 
     userScreen.classList.remove('hidden');
@@ -169,7 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
     userSelect.innerHTML = '<option value="">Selecione seu usuário...</option>';
     USERS.forEach(user => {
         const option = document.createElement('option');
-        option.value = user.id;
+        option.value = user.name;
         option.textContent = user.name;
         userSelect.appendChild(option);
     });
@@ -179,7 +204,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const collapsedState = JSON.parse(localStorage.getItem('collapsedColumns')) || {};
     kanbanBoard.innerHTML = STATUS_LIST.map(status => {
       const isCollapsed = collapsedState[status];
-      const searchInputHTML = status === 'Entregue' ? `<div class="my-2"><input type="search" data-status="${status}" placeholder="Buscar por Placa..." class="w-full p-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 search-input-entregue"></div>` : '';
+      const searchInputHTML = status === 'Entregue'
+        ? `<div class="my-2"><input type="search" data-status="${status}" placeholder="Buscar por Placa..." class="w-full p-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 search-input-entregue"></div>`
+        : '';
       const columnLedHTML = isCollapsed ? '<div class="column-led ml-2"></div>' : '';
       return `<div class="status-column p-4"><div class="flex justify-between items-center cursor-pointer toggle-column-btn mb-2" data-status="${status}"><div class="flex items-center"><h3 class="font-bold text-gray-800">${formatStatus(status)}</h3>${columnLedHTML}</div><i class='bx bxs-chevron-down transition-transform ${isCollapsed ? 'rotate-180' : ''}'></i></div>${searchInputHTML}<div class="space-y-3 vehicle-list ${isCollapsed ? 'collapsed' : ''}" data-status="${status}"></div></div>`;
     }).join('');
@@ -250,7 +277,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
        if (detailsModal.classList.contains('flex') && document.getElementById('logOsId').value === os.id) {
             renderTimeline(os);
-            renderMediaGallery(os);
        }
       updateAttentionPanel();
     });
@@ -277,15 +303,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const vehiclesInStatus = Object.values(allServiceOrders).filter(os => os.status === statusKey);
         const hasVehicles = vehiclesInStatus.length > 0;
         const blinkingClass = (hasVehicles && config.blinkClass && !attentionPanelContainer.classList.contains('collapsed')) ? config.blinkClass : '';
-        const vehicleListHTML = hasVehicles ? vehiclesInStatus.map(os => `<p class="cursor-pointer attention-vehicle text-white hover:text-blue-300" data-os-id="${os.id}">${os.placa} - ${os.modelo}</p>`).join('') : `<p class="text-gray-400">- Vazio -</p>`;
+        const vehicleListHTML = hasVehicles
+            ? vehiclesInStatus.map(os => `<p class="cursor-pointer attention-vehicle text-white hover:text-blue-300" data-os-id="${os.id}">${os.placa} - ${os.modelo}</p>`).join('')
+            : `<p class="text-gray-400">- Vazio -</p>`;
         return `<div class="attention-box p-2 rounded-md bg-gray-900 border-2 border-gray-700 ${blinkingClass}" data-status-key="${statusKey}"><h3 class="text-center text-${config.color}-400 font-bold text-xs sm:text-sm truncate">${config.label}</h3><div class="mt-1 text-center text-white text-xs space-y-1 h-16 overflow-y-auto">${vehicleListHTML}</div></div>`;
     }).join('');
     updateLedState(vehiclesTriggeringAlert);
   };
-  
+
   function sendTeamNotification(message) {
       if (!currentUser) return;
-      db.ref('notifications').push().set({ message: message, user: currentUser.name, timestamp: firebase.database.ServerValue.TIMESTAMP });
+      const notificationRef = db.ref('notifications').push();
+      notificationRef.set({ message: message, user: currentUser.name, timestamp: firebase.database.ServerValue.TIMESTAMP });
   }
 
   function listenToNotifications() {
@@ -298,11 +327,15 @@ document.addEventListener('DOMContentLoaded', () => {
           snapshot.ref.remove();
       });
   }
-  
+
   const updateLedState = (vehiclesTriggeringAlert) => {
-    alertLed.classList.toggle('hidden', !(vehiclesTriggeringAlert.size > 0 && attentionPanelContainer.classList.contains('collapsed')));
+    if (vehiclesTriggeringAlert.size > 0 && attentionPanelContainer.classList.contains('collapsed')) {
+        alertLed.classList.remove('hidden');
+    } else {
+        alertLed.classList.add('hidden');
+    }
   };
-  
+
   const updateServiceOrderStatus = async (osId, newStatus) => {
     const os = allServiceOrders[osId];
     if (!os) return;
@@ -311,23 +344,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const updates = { status: newStatus, lastUpdate: new Date().toISOString() };
     if (newStatus === 'Em-Analise') updates.responsibleForBudget = currentUser.name;
     else if (newStatus === 'Em-Execucao') updates.responsibleForService = currentUser.name;
-    else if (newStatus === 'Entregue') { 
-        updates.responsibleForDelivery = currentUser.name;
-        updates.deliveredAt = new Date().toISOString(); // ADICIONA TIMESTAMP DE ENTREGA
-    }
+    else if (newStatus === 'Entregue') updates.responsibleForDelivery = currentUser.name;
     try {
         await db.ref(`serviceOrders/${osId}/logs`).push().set(logEntry);
         await db.ref(`serviceOrders/${osId}`).update(updates);
         sendTeamNotification(`O.S. ${os.placa} movida para ${formatStatus(newStatus)} por ${currentUser.name}`);
     } catch (error) {
-        console.error("Erro ao atualizar status:", error);
-        showNotification("Falha ao mover O.S.", "error");
+        console.error("Erro ao atualizar status e registrar log:", error);
+        showNotification("Falha ao mover O.S. Tente novamente.", "error");
     }
   };
-  
+
   const openDetailsModal = (osId) => {
     const os = allServiceOrders[osId];
-    if (!os) return;
+    if (!os) {
+        showNotification("Não foi possível carregar os detalhes desta O.S.", "error");
+        return;
+    }
     document.getElementById('detailsPlacaModelo').textContent = `${os.placa} - ${os.modelo}`;
     document.getElementById('detailsCliente').innerHTML = `Cliente: ${os.cliente} <br> <span class="text-sm text-gray-500">Telefone: ${os.telefone || 'Não informado'}</span>`;
     document.getElementById('detailsKm').textContent = `KM: ${os.km ? new Intl.NumberFormat('pt-BR').format(os.km) : 'N/A'}`;
@@ -336,9 +369,17 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('responsible-service').textContent = os.responsibleForService || 'N/D';
     document.getElementById('responsible-delivery').textContent = os.responsibleForDelivery || 'N/D';
     const observacoesContainer = document.getElementById('detailsObservacoes');
-    observacoesContainer.innerHTML = os.observacoes ? `<h4 class="text-sm font-semibold text-gray-500 mb-1">Queixa do Cliente:</h4><p class="text-gray-800 bg-yellow-100 p-3 rounded-md whitespace-pre-wrap">${os.observacoes}</p>` : '';
-    observacoesContainer.classList.toggle('hidden', !os.observacoes);
-    deleteOsBtn.classList.toggle('hidden', !hasPermission('manager'));
+    if (os.observacoes) {
+      observacoesContainer.innerHTML = `<h4 class="text-sm font-semibold text-gray-500 mb-1">Queixa do Cliente:</h4><p class="text-gray-800 bg-yellow-100 p-3 rounded-md whitespace-pre-wrap">${os.observacoes}</p>`;
+      observacoesContainer.classList.remove('hidden');
+    } else {
+      observacoesContainer.classList.add('hidden');
+    }
+    if (currentUser && (currentUser.role === 'Gestor' || currentUser.role === 'Atendente')) {
+        deleteOsBtn.classList.remove('hidden');
+    } else {
+        deleteOsBtn.classList.add('hidden');
+    }
     document.getElementById('logOsId').value = osId;
     logForm.reset();
     document.getElementById('fileName').textContent = '';
@@ -349,63 +390,80 @@ document.addEventListener('DOMContentLoaded', () => {
     detailsModal.classList.remove('hidden');
     detailsModal.classList.add('flex');
   };
-  
+
   const renderTimeline = (os) => {
     const logs = os.logs || {};
     const logEntries = Object.entries(logs).sort(([,a], [,b]) => new Date(b.timestamp) - new Date(a.timestamp));
+
     timelineContainer.innerHTML = logEntries.map(([logId, log]) => {
       const date = new Date(log.timestamp);
       const formattedDate = date.toLocaleDateString('pt-BR');
       const formattedTime = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-      let iconClass = 'bx-message-detail', itemClass = 'timeline-item-log';
+
+      let iconClass = 'bx-message-detail';
+      let itemClass = 'timeline-item-log';
       if (log.type === 'status') { iconClass = 'bx-transfer'; itemClass = 'timeline-item-status'; }
       else if (log.value) { iconClass = 'bx-dollar'; itemClass = 'timeline-item-value'; }
-      const canDelete = hasPermission('manager') && log.description && !log.description.startsWith('ATT EXCLUIDA');
-      const deleteButtonHTML = canDelete ? `<button class="delete-log-btn" data-os-id="${os.id}" data-log-id="${logId}" title="Excluir esta atualização"><i class='bx bx-x text-lg'></i></button>` : '';
-      const descriptionHTML = log.description && log.description.startsWith('ATT EXCLUIDA') ? `<p class="text-red-500 italic text-sm">${log.description}</p>` : `<p class="text-gray-700 text-sm">${log.description || ''}</p>`;
+
+      const canDelete = (currentUser.role === 'Gestor' || currentUser.role === 'Atendente') && log.description && !log.description.startsWith('ATT EXCLUIDA');
+      const deleteButtonHTML = canDelete
+        ? `<button class="delete-log-btn" data-os-id="${os.id}" data-log-id="${logId}" title="Excluir esta atualização"><i class='bx bx-x text-lg'></i></button>`
+        : '';
+
+      const descriptionHTML = log.description && log.description.startsWith('ATT EXCLUIDA')
+        ? `<p class="text-red-500 italic text-sm">${log.description}</p>`
+        : `<p class="text-gray-700 text-sm">${log.description || ''}</p>`;
+
       return `<div class="timeline-item ${itemClass}"><div class="timeline-icon"><i class='bx ${iconClass}'></i></div><div class="bg-gray-50 p-3 rounded-lg relative">${deleteButtonHTML}<div class="flex justify-between items-start mb-1"><h4 class="font-semibold text-gray-800 text-sm">${log.user}</h4><span class="text-xs text-gray-500">${formattedDate} ${formattedTime}</span></div>${descriptionHTML}${log.parts ? `<p class="text-gray-600 text-xs mt-1"><strong>Peças:</strong> ${log.parts}</p>` : ''}${log.value ? `<p class="text-green-600 text-xs mt-1"><strong>Valor:</strong> R$ ${parseFloat(log.value).toFixed(2)}</p>` : ''}</div></div>`;
     }).join('');
-    if (logEntries.length === 0) timelineContainer.innerHTML = '<p class="text-gray-500 text-center py-4">Nenhum registro encontrado.</p>';
+
+    if (logEntries.length === 0) {
+      timelineContainer.innerHTML = '<p class="text-gray-500 text-center py-4">Nenhum registro encontrado.</p>';
+    }
   };
-  
+
   const renderMediaGallery = (os) => {
     const thumbnailGrid = document.getElementById('thumbnail-grid');
-    const media = os.media || {};
-    lightboxMedia = Object.entries(media).map(([key, value]) => ({...value, key}));
+    const media = os.media || [];
+    lightboxMedia = Object.values(media);
     thumbnailGrid.innerHTML = lightboxMedia.map((item, index) => {
         if (!item || !item.type) return '';
-        const isImage = item.type.startsWith('image/'), isVideo = item.type.startsWith('video/'), isPdf = item.type === 'application/pdf';
-        let thumbnailContent = `<i class='bx bx-file text-4xl text-gray-500'></i>`; 
-        if (isImage) thumbnailContent = `<img src="${item.url}" alt="Imagem ${index + 1}" loading="lazy" class="w-full h-full object-cover">`;
-        else if (isVideo) thumbnailContent = `<i class='bx bx-play-circle text-4xl text-blue-500'></i>`;
-        else if (isPdf) thumbnailContent = `<i class='bx bxs-file-pdf text-4xl text-red-500'></i>`;
-        const deleteBtn = hasPermission('admin') ? `<button class="delete-media-btn" data-os-id="${os.id}" data-media-key="${item.key}" title="Excluir Mídia"><i class='bx bxs-trash'></i></button>` : '';
-        return `<div class="aspect-square bg-gray-200 rounded-md overflow-hidden thumbnail-item flex items-center justify-center" data-index="${index}">${thumbnailContent}${deleteBtn}</div>`;
+        const isImage = item.type.startsWith('image/');
+        const isVideo = item.type.startsWith('video/');
+        const isPdf = item.type === 'application/pdf';
+        let thumbnailContent = `<i class='bx bx-file text-4xl text-gray-500'></i>`;
+        if (isImage) { thumbnailContent = `<img src="${item.url}" alt="Imagem ${index + 1}" loading="lazy" class="w-full h-full object-cover">`; }
+        else if (isVideo) { thumbnailContent = `<i class='bx bx-play-circle text-4xl text-blue-500'></i>`; }
+        else if (isPdf) { thumbnailContent = `<i class='bx bxs-file-pdf text-4xl text-red-500'></i>`; }
+        return `<div class="aspect-square bg-gray-200 rounded-md overflow-hidden cursor-pointer thumbnail-item flex items-center justify-center" data-index="${index}">${thumbnailContent}</div>`;
     }).join('');
-    if (lightboxMedia.length === 0) thumbnailGrid.innerHTML = `<div class="col-span-full text-center py-8 text-gray-400"><i class='bx bx-image text-4xl mb-2'></i><p class="text-sm">Nenhuma mídia adicionada</p></div>`;
+    if (lightboxMedia.length === 0) {
+      thumbnailGrid.innerHTML = `<div class="col-span-full text-center py-8 text-gray-400"><i class='bx bx-image text-4xl mb-2'></i><p class="text-sm">Nenhuma mídia adicionada</p></div>`;
+    }
   };
-  
-  const generatePrintableOsHtml = (os) => {
-    const formatDate = (iso) => iso ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : 'N/A';
+
+  const exportOsToPrint = (osId) => {
+    const os = allServiceOrders[osId];
+    if (!os) { showNotification('Dados da O.S. não encontrados.', 'error'); return; }
+    const formatDate = (isoString) => {
+        if (!isoString) return 'N/A';
+        return new Date(isoString).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+    };
     const logs = os.logs ? Object.values(os.logs).sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp)) : [];
     let totalValue = 0;
     const timelineHtml = logs.map(log => {
         if (log.value) { totalValue += parseFloat(log.value); }
-        return `<tr><td>${formatDate(log.timestamp)}</td><td>${log.user}</td><td>${log.description}</td><td>${log.parts||'---'}</td><td style="text-align:right;">${log.value?`R$ ${parseFloat(log.value).toFixed(2)}`:'---'}</td></tr>`;
+        return `<tr><td>${formatDate(log.timestamp)}</td><td>${log.user}</td><td>${log.description}</td><td>${log.parts || '---'}</td><td style="text-align: right;">${log.value ? `R$ ${parseFloat(log.value).toFixed(2)}` : '---'}</td></tr>`;
     }).join('');
-    const photosHtml = os.media ? Object.values(os.media).filter(item => item && item.type.startsWith('image/')).map(p => `<img src="${p.url}" style="width:100%; max-width: 200px; margin: 5px; border: 1px solid #ccc; border-radius: 4px;">`).join('') : '';
-    return `<html><head><title>OS - ${os.placa}</title><style>body{font-family:sans-serif;margin:20px}h1,h2{text-align:center}.section{margin-bottom:20px;border:1px solid #ccc;border-radius:8px;padding:15px;page-break-inside:avoid}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:8px;font-size:12px}th{background-color:#f2f2f2}.photo-gallery{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}</style></head><body><h1>CHEVRON Bosch Car Service</h1><h2>Ordem de Serviço</h2><div class="section"><strong>Placa:</strong> ${os.placa} | <strong>Modelo:</strong> ${os.modelo} | <strong>Cliente:</strong> ${os.cliente} | <strong>KM:</strong> ${os.km} | <strong>Abertura:</strong> ${formatDate(os.createdAt)}</div>${os.observacoes?`<div class="section"><h3>Queixa do Cliente</h3><p>${os.observacoes}</p></div>`:''}<table><thead><tr><th>Data/Hora</th><th>Usuário</th><th>Descrição</th><th>Peças</th><th style="text-align:right;">Valor</th></tr></thead><tbody>${timelineHtml}</tbody></table><div style="text-align:right;font-size:18px;font-weight:bold;margin-top:20px">Total: R$ ${totalValue.toFixed(2)}</div>${photosHtml?`<div class="section"><h3>Fotos</h3><div class="photo-gallery">${photosHtml}</div></div>`:''}</body></html>`;
-  }
-
-  const exportOsToPrint = (osId) => {
-    const os = allServiceOrders[osId];
-    if (!os) return;
-    const printHtml = generatePrintableOsHtml(os);
+    const media = os.media ? Object.values(os.media) : [];
+    const photos = media.filter(item => item && item.type.startsWith('image/'));
+    const photosHtml = photos.length > 0 ? `<div class="section"><h2>Fotos Anexadas</h2><div class="photo-gallery">${photos.map(photo => `<img src="${photo.url}" alt="Foto da O.S.">`).join('')}</div></div>` : '';
+    const printHtml = `<html><head><title>Ordem de Serviço - ${os.placa}</title><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;margin:0;padding:20px;color:#333}.container{max-width:800px;margin:auto}.header{text-align:center;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:20px}.header h1{margin:0;font-size:24px}.header p{margin:5px 0}.section{margin-bottom:20px;border:1px solid #ccc;border-radius:8px;padding:15px;page-break-inside:avoid}.section h2{margin-top:0;font-size:18px;border-bottom:1px solid #eee;padding-bottom:5px;margin-bottom:10px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid-item strong{display:block;color:#555}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #ddd;padding:8px;text-align:left;font-size:14px}th{background-color:#f2f2f2}.total{text-align:right;font-size:18px;font-weight:bold;margin-top:20px}.footer{text-align:center;margin-top:50px;padding-top:20px;border-top:1px solid #ccc}.signature{margin-top:60px}.signature-line{border-bottom:1px solid #000;width:300px;margin:0 auto}.signature p{margin-top:5px;font-size:14px}.photo-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:10px}.photo-gallery img{width:100%;height:auto;border:1px solid #ddd;border-radius:4px}.dev-signature{margin-top:40px;font-size:12px;color:#888}.dev-signature strong{color:#555}@media print{body{padding:10px}.no-print{display:none}}</style></head><body><div class="container"><div class="header"><h1>CHEVRON Bosch Car Service</h1><p>Ordem de Serviço</p></div><div class="section"><h2>Detalhes da O.S.</h2><div class="grid"><div class="grid-item"><strong>Placa:</strong> ${os.placa}</div><div class="grid-item"><strong>Modelo:</strong> ${os.modelo}</div><div class="grid-item"><strong>Cliente:</strong> ${os.cliente}</div><div class="grid-item"><strong>Telefone:</strong> ${os.telefone||"N/A"}</div><div class="grid-item"><strong>KM:</strong> ${os.km?new Intl.NumberFormat("pt-BR").format(os.km):"N/A"}</div><div class="grid-item"><strong>Data de Abertura:</strong> ${formatDate(os.createdAt)}</div><div class="grid-item"><strong>Atendente:</strong> ${os.responsible||"N/A"}</div></div></div>${os.observacoes?`<div class="section"><h2>Queixa do Cliente / Observações Iniciais</h2><p style="white-space: pre-wrap;">${os.observacoes}</p></div>`:""}<div class="section"><h2>Histórico de Serviços e Peças</h2><table><thead><tr><th>Data/Hora</th><th>Usuário</th><th>Descrição</th><th>Peças</th><th style="text-align: right;">Valor</th></tr></thead><tbody>${timelineHtml||'<tr><td colspan="5" style="text-align: center;">Nenhum registro no histórico.</td></tr>'}</tbody></table><div class="total">Total: R$ ${totalValue.toFixed(2)}</div></div>${photosHtml}<div class="footer"><div class="signature"><div class="signature-line"></div><p>Assinatura do Cliente</p></div><p>Documento gerado em: ${new Date().toLocaleString("pt-BR")}</p></div></div><script>window.onload=function(){window.print();setTimeout(function(){window.close()},100)}<\/script></body></html>`;
     const printWindow = window.open('', '_blank');
-    printWindow.document.write(printHtml + '<script>window.onload=()=>{window.print();setTimeout(()=>{window.close()},100)}</script>');
+    printWindow.document.write(printHtml);
     printWindow.document.close();
   };
-  
+
   const openLightbox = (index) => {
     if (!lightboxMedia || lightboxMedia.length === 0) return;
     currentLightboxIndex = index;
@@ -413,59 +471,57 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!media || !media.type) return; 
     if (media.type === 'application/pdf') { window.open(media.url, '_blank'); return; }
     const lightboxContent = document.getElementById('lightbox-content');
-    lightboxContent.innerHTML = media.type.startsWith('image/') ? `<img src="${media.url}" class="max-w-full max-h-full">` : `<video src="${media.url}" controls class="max-w-full max-h-full"></video>`;
+    if (media.type.startsWith('image/')) {
+      lightboxContent.innerHTML = `<img src="${media.url}" alt="Imagem" class="max-w-full max-h-full object-contain">`;
+    } else {
+      lightboxContent.innerHTML = `<video src="${media.url}" controls class="max-w-full max-h-full"></video>`;
+    }
     document.getElementById('lightbox-prev').style.display = index > 0 ? 'block' : 'none';
     document.getElementById('lightbox-next').style.display = index < lightboxMedia.length - 1 ? 'block' : 'none';
-    document.getElementById('lightbox-download').href = media.url;
+    const downloadBtn = document.getElementById('lightbox-download');
+    downloadBtn.href = media.url;
+    downloadBtn.download = `media_${index + 1}`;
     lightbox.classList.remove('hidden');
     lightbox.classList.add('flex');
   };
 
-  // --- PAINEL DO GESTOR ---
-  const populateUserList = () => {
-    userList.innerHTML = USERS.map(user => `
-        <div class="flex items-center justify-between bg-white p-3 rounded-lg shadow-sm">
-            <div>
-                <p class="font-semibold">${user.name}</p>
-                <p class="text-sm text-gray-500">${user.role}</p>
-            </div>
-            <div class="flex gap-2">
-                <button class="change-password-btn btn text-sm bg-gray-200" data-user-id="${user.id}">Alterar Senha</button>
-                ${(currentUser.id !== user.id && hasPermission('admin')) ? `<button class="delete-user-btn btn text-sm bg-red-100 text-red-700" data-user-id="${user.id}" data-user-name="${user.name}"><i class="bx bxs-trash"></i></button>` : ''}
-            </div>
-        </div>
-    `).join('');
-  };
-
-  const openAdminModal = () => {
-    populateUserList();
-    adminModal.classList.remove('hidden');
-    adminModal.classList.add('flex');
-  };
-  
   // --- LISTENERS DE EVENTOS ---
   loginForm.addEventListener('submit', (e) => {
     e.preventDefault();
-    const userId = userSelect.value;
-    const user = USERS.find(u => u.id === userId);
-    if (user && user.password === passwordInput.value) {
+    loginError.textContent = '';
+    const selectedUserName = userSelect.value;
+    const enteredPassword = passwordInput.value;
+    if (!selectedUserName) {
+        loginError.textContent = 'Por favor, selecione um usuário.';
+        return;
+    }
+    const user = USERS.find(u => u.name === selectedUserName);
+    if (user && user.password === enteredPassword) {
         loginUser(user);
     } else {
-        loginError.textContent = 'Senha incorreta.';
+        loginError.textContent = 'Senha incorreta. Tente novamente.';
+        passwordInput.value = '';
     }
   });
-  
+
   logoutButton.addEventListener('click', logoutUser);
+
   togglePanelBtn.addEventListener('click', () => {
     attentionPanelContainer.classList.toggle('collapsed');
     togglePanelBtn.querySelector('i').classList.toggle('rotate-180');
     updateAttentionPanel();
   });
-  
-  attentionPanel.addEventListener('click', (e) => e.target.closest('.attention-vehicle') && openDetailsModal(e.target.closest('.attention-vehicle').dataset.osId));
-  
+
+  attentionPanel.addEventListener('click', (e) => {
+    const vehicleElement = e.target.closest('.attention-vehicle');
+    if (vehicleElement) { openDetailsModal(vehicleElement.dataset.osId); }
+  });
+
   kanbanBoard.addEventListener('click', (e) => {
-    const card = e.target.closest('.vehicle-card'), moveBtn = e.target.closest('.btn-move-status'), clickableArea = e.target.closest('.card-clickable-area'), toggleBtn = e.target.closest('.toggle-column-btn');
+    const card = e.target.closest('.vehicle-card');
+    const moveBtn = e.target.closest('.btn-move-status');
+    const clickableArea = e.target.closest('.card-clickable-area');
+    const toggleBtn = e.target.closest('.toggle-column-btn');
     if (moveBtn) {
       e.stopPropagation();
       updateServiceOrderStatus(moveBtn.dataset.osId, moveBtn.dataset.newStatus);
@@ -484,17 +540,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  kanbanBoard.addEventListener('input', (e) => e.target.matches('.search-input-entregue') && renderDeliveredColumn());
+  kanbanBoard.addEventListener('input', (e) => {
+      if (e.target.matches('.search-input-entregue')) {
+          renderDeliveredColumn();
+      }
+  });
 
   globalSearchInput.addEventListener('input', (e) => {
     const searchTerm = e.target.value.toUpperCase().trim();
+
     if (!searchTerm) {
+        globalSearchResults.innerHTML = '';
         globalSearchResults.classList.add('hidden');
         return;
     }
-    const matching = Object.values(allServiceOrders).filter(os => os.placa && os.placa.toUpperCase().includes(searchTerm)).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); 
-    if (matching.length > 0) {
-        globalSearchResults.innerHTML = matching.map(os => `<div class="search-result-item" data-os-id="${os.id}"><p class="font-bold">${os.placa} - ${os.modelo}</p><p class="text-sm text-gray-600">Status: <span class="font-semibold text-blue-700">${formatStatus(os.status)}</span></p></div>`).join('');
+    
+    const matchingOrders = Object.values(allServiceOrders)
+        .filter(os => os.placa && os.placa.toUpperCase().includes(searchTerm))
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); 
+
+    if (matchingOrders.length > 0) {
+        globalSearchResults.innerHTML = matchingOrders.map(os => `
+            <div class="search-result-item" data-os-id="${os.id}">
+                <p class="font-bold">${os.placa} - ${os.modelo}</p>
+                <p class="text-sm text-gray-600">Status: <span class="font-semibold text-blue-700">${formatStatus(os.status)}</span></p>
+            </div>
+        `).join('');
         globalSearchResults.classList.remove('hidden');
     } else {
         globalSearchResults.innerHTML = '<div class="p-3 text-center text-gray-500">Nenhum veículo encontrado.</div>';
@@ -503,44 +574,53 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   
   globalSearchResults.addEventListener('click', (e) => {
-      const item = e.target.closest('.search-result-item');
-      if (item) {
-          openDetailsModal(item.dataset.osId);
+      const resultItem = e.target.closest('.search-result-item');
+      if (resultItem) {
+          const osId = resultItem.dataset.osId;
+          openDetailsModal(osId);
           globalSearchInput.value = ''; 
+          globalSearchResults.innerHTML = '';
           globalSearchResults.classList.add('hidden');
       }
   });
 
+  // Listener de clique geral para fechar modais E abrir lightbox
   document.addEventListener('click', (e) => {
-    if (e.target.closest('.btn-close-modal') || e.target.id === 'detailsModal') detailsModal.classList.add('hidden');
-    if (e.target.closest('.btn-close-modal') || e.target.id === 'osModal') osModal.classList.add('hidden');
-    if (e.target.closest('.btn-close-modal') || e.target.id === 'adminModal') adminModal.classList.add('hidden');
-    if (!e.target.closest('.search-container')) globalSearchResults.classList.add('hidden');
+    // Fecha modais
+    if (e.target.closest('.btn-close-modal') || e.target.id === 'detailsModal') { detailsModal.classList.add('hidden'); }
+    if (e.target.closest('.btn-close-modal') || e.target.id === 'osModal') { osModal.classList.add('hidden'); }
+    
+    // Esconde resultados da busca ao clicar fora
+    const searchContainer = document.querySelector('.search-container');
+    if (searchContainer && !searchContainer.contains(e.target)) {
+        globalSearchResults.classList.add('hidden');
+    }
+
+    // **FIX**: Abre o lightbox ao clicar em uma miniatura
+    const thumbnailItem = e.target.closest('.thumbnail-item');
+    if (thumbnailItem && thumbnailItem.dataset.index !== undefined) {
+      openLightbox(parseInt(thumbnailItem.dataset.index));
+    }
   });
 
   detailsModal.addEventListener('click', (e) => {
-    if (e.target.closest('#exportOsBtn')) exportOsToPrint(document.getElementById('logOsId').value);
-    const delMediaBtn = e.target.closest('.delete-media-btn');
-    if(delMediaBtn) {
-        confirmDeleteMediaBtn.dataset.osId = delMediaBtn.dataset.osId;
-        confirmDeleteMediaBtn.dataset.mediaKey = delMediaBtn.dataset.mediaKey;
-        confirmDeleteMediaModal.classList.remove('hidden');
-    }
-    const thumb = e.target.closest('.thumbnail-item');
-    if (thumb && thumb.dataset.index !== undefined) {
-      openLightbox(parseInt(thumb.dataset.index));
-    }
+    const exportBtn = e.target.closest('#exportOsBtn');
+    if (exportBtn) { exportOsToPrint(document.getElementById('logOsId').value); }
   });
-  
+
   addOSBtn.addEventListener('click', () => {
     document.getElementById('osModalTitle').textContent = 'Nova Ordem de Serviço';
+    document.getElementById('osId').value = '';
     osForm.reset();
-    document.getElementById('osResponsavel').innerHTML = '<option value="">Selecione...</option>' + USERS.filter(u => u.role === 'Atendente' || u.role === 'Gestor').map(u => `<option value="${u.name}">${u.name}</option>`).join('');
+    const responsavelSelect = document.getElementById('osResponsavel');
+    responsavelSelect.innerHTML = '<option value="">Selecione um responsável...</option>' + USERS.map(user => `<option value="${user.name}">${user.name}</option>`).join('');
     osModal.classList.remove('hidden');
+    osModal.classList.add('flex');
   });
-  
+
   osForm.addEventListener('submit', (e) => {
     e.preventDefault();
+    const priority = document.querySelector('input[name="osPrioridade"]:checked').value;
     const osData = {
       placa: document.getElementById('osPlaca').value.toUpperCase(),
       modelo: document.getElementById('osModelo').value,
@@ -549,272 +629,219 @@ document.addEventListener('DOMContentLoaded', () => {
       km: parseInt(document.getElementById('osKm').value) || 0,
       responsible: document.getElementById('osResponsavel').value,
       observacoes: document.getElementById('osObservacoes').value,
-      priority: document.querySelector('input[name="osPrioridade"]:checked').value,
+      priority: priority,
       status: 'Aguardando-Mecanico',
       createdAt: new Date().toISOString(),
-      lastUpdate: new Date().toISOString()
+      lastUpdate: new Date().toISOString(),
+      logs: [],
+      media: []
     };
-    db.ref('serviceOrders').push().set(osData);
-    sendTeamNotification(`Nova O.S. para ${osData.placa} criada por ${currentUser.name}`);
+    const osId = document.getElementById('osId').value;
+    if (osId) {
+      const { logs, media, ...dataToUpdate } = osData;
+      db.ref(`serviceOrders/${osId}`).update(dataToUpdate);
+      sendTeamNotification(`O.S. ${osData.placa} foi atualizada por ${currentUser.name}`);
+    } else {
+      const newOsRef = db.ref('serviceOrders').push();
+      newOsRef.set(osData);
+      sendTeamNotification(`Nova O.S. para ${osData.placa} criada por ${currentUser.name}`);
+    }
     osModal.classList.add('hidden');
   });
-  
+
   logForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const submitBtn = e.target.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
     submitBtn.innerHTML = `<i class='bx bx-loader-alt bx-spin'></i> Salvando...`;
     const osId = document.getElementById('logOsId').value;
-    const logEntry = { timestamp: new Date().toISOString(), user: currentUser.name, description: document.getElementById('logDescricao').value, type: 'log', parts: document.getElementById('logPecas').value || null, value: document.getElementById('logValor').value || null };
+    const description = document.getElementById('logDescricao').value;
+    const parts = document.getElementById('logPecas').value;
+    const value = document.getElementById('logValor').value;
+    const logEntry = { timestamp: new Date().toISOString(), user: currentUser.name, description: description, type: 'log', parts: parts || null, value: value || null };
     try {
-        if (filesToUpload.length > 0) {
+        if (filesToUpload && filesToUpload.length > 0) {
             submitBtn.innerHTML = `<i class='bx bx-loader-alt bx-spin'></i> Enviando mídia...`;
-            const mediaPromises = filesToUpload.map(file => uploadFileToCloudinary(file).then(data => ({ type: file.type, url: data.url, name: file.name, timestamp: new Date().toISOString() })));
+            const mediaPromises = filesToUpload.map(file =>
+                uploadFileToCloudinary(file).then(url => ({
+                    type: file.type, url: url, name: file.name, timestamp: new Date().toISOString()
+                }))
+            );
+            const mediaResults = await Promise.all(mediaPromises);
             const mediaRef = db.ref(`serviceOrders/${osId}/media`);
-            const results = await Promise.all(mediaPromises);
-            results.forEach(media => mediaRef.push(media));
+            const snapshot = await mediaRef.once('value');
+            const currentMedia = snapshot.val() || [];
+            await mediaRef.set([...currentMedia, ...mediaResults]);
         }
-        await db.ref(`serviceOrders/${osId}/logs`).push().set(logEntry);
-        logForm.reset(); filesToUpload = [];
+        const logsRef = db.ref(`serviceOrders/${osId}/logs`);
+        const newLogRef = logsRef.push();
+        await newLogRef.set(logEntry);
+        logForm.reset();
+        filesToUpload = [];
         document.getElementById('fileName').textContent = '';
         postLogActions.style.display = 'block';
-        sendTeamNotification(`Novo registro na O.S. ${allServiceOrders[osId].placa} por ${currentUser.name}`);
-    } catch (error) { showNotification(`Erro: ${error.message}`, 'error');
+        sendTeamNotification(`Novo registro adicionado à O.S. ${allServiceOrders[osId].placa} por ${currentUser.name}`);
+    } catch (error) {
+        console.error("Erro ao salvar registro:", error);
+        showNotification(`Erro: ${error.message}`, 'error');
     } finally {
         submitBtn.disabled = false;
-        submitBtn.innerHTML = `<i class='bx bx-message-square-add'></i> Adicionar`;
+        submitBtn.innerHTML = `<i class='bx bx-message-square-add'></i> Adicionar ao Histórico`;
     }
   });
-  
+
   document.getElementById('btn-move-next').addEventListener('click', () => {
     const osId = document.getElementById('logOsId').value;
-    const nextStatus = STATUS_LIST[STATUS_LIST.indexOf(allServiceOrders[osId].status) + 1];
+    const os = allServiceOrders[osId];
+    const nextStatus = STATUS_LIST[STATUS_LIST.indexOf(os.status) + 1];
     if (nextStatus) { updateServiceOrderStatus(osId, nextStatus); detailsModal.classList.add('hidden'); }
   });
-  
+
   document.getElementById('btn-move-prev').addEventListener('click', () => {
     const osId = document.getElementById('logOsId').value;
-    const prevStatus = STATUS_LIST[STATUS_LIST.indexOf(allServiceOrders[osId].status) - 1];
+    const os = allServiceOrders[osId];
+    const prevStatus = STATUS_LIST[STATUS_LIST.indexOf(os.status) - 1];
     if (prevStatus) { updateServiceOrderStatus(osId, prevStatus); detailsModal.classList.add('hidden'); }
   });
-  
+
   document.getElementById('btn-stay').addEventListener('click', () => { postLogActions.style.display = 'none'; });
-  
+
   kmUpdateForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const osId = document.getElementById('logOsId').value;
     const newKm = parseInt(document.getElementById('updateKmInput').value);
-    if (newKm > 0) {
+    if (newKm && newKm > 0) {
       await db.ref(`serviceOrders/${osId}/km`).set(newKm);
-      const log = { timestamp: new Date().toISOString(), user: currentUser.name, description: `KM atualizado para ${new Intl.NumberFormat('pt-BR').format(newKm)} km.`, type: 'log' };
-      await db.ref(`serviceOrders/${osId}/logs`).push().set(log);
+      const logEntry = { timestamp: new Date().toISOString(), user: currentUser.name, description: `KM do veículo atualizado para ${new Intl.NumberFormat('pt-BR').format(newKm)} km.`, type: 'log' };
+      await db.ref(`serviceOrders/${osId}/logs`).push().set(logEntry);
       document.getElementById('updateKmInput').value = '';
-      showNotification('KM atualizado!', 'success');
+      showNotification('KM atualizado e registrado no histórico!', 'success');
+      sendTeamNotification(`KM da O.S. ${allServiceOrders[osId].placa} atualizado para ${newKm} por ${currentUser.name}`);
     }
   });
-  
+
   deleteOsBtn.addEventListener('click', () => {
-    const os = allServiceOrders[document.getElementById('logOsId').value];
-    confirmDeleteText.innerHTML = `Excluir O.S. da placa <strong>${os.placa}</strong>? Ação irreversível.`;
-    confirmDeleteBtn.dataset.osId = os.id;
-    confirmDeleteModal.classList.remove('hidden');
+    const osId = document.getElementById('logOsId').value;
+    const os = allServiceOrders[osId];
+    if (currentUser.role === 'Gestor' || currentUser.role === 'Atendente') {
+      confirmDeleteText.innerHTML = `Você tem certeza que deseja excluir a O.S. da placa <strong>${os.placa}</strong>? <br><br>Esta ação não pode ser desfeita.`;
+      confirmDeleteBtn.dataset.osId = osId;
+      confirmDeleteModal.classList.remove('hidden');
+      confirmDeleteModal.classList.add('flex');
+    } else {
+      showNotification('Você não tem permissão para excluir Ordens de Serviço.', 'error');
+    }
   });
 
   confirmDeleteBtn.addEventListener('click', () => {
     const osId = confirmDeleteBtn.dataset.osId;
-    db.ref(`serviceOrders/${osId}`).remove();
-    detailsModal.classList.add('hidden');
-    confirmDeleteModal.classList.add('hidden');
-    showNotification(`O.S. excluída.`, 'success');
+    if (osId) {
+      const os = allServiceOrders[osId];
+      db.ref(`serviceOrders/${osId}`).remove();
+      detailsModal.classList.add('hidden');
+      confirmDeleteModal.classList.add('hidden');
+      confirmDeleteModal.classList.remove('flex');
+      showNotification(`O.S. ${os.placa} foi excluída com sucesso.`, 'success');
+      sendTeamNotification(`O.S. ${os.placa} foi excluída por ${currentUser.name}`);
+    }
   });
 
-  cancelDeleteBtn.addEventListener('click', () => confirmDeleteModal.classList.add('hidden'));
+  cancelDeleteBtn.addEventListener('click', () => {
+    confirmDeleteModal.classList.add('hidden');
+    confirmDeleteModal.classList.remove('flex');
+  });
+
+  confirmDeleteModal.addEventListener('click', (e) => {
+      if (e.target.id === 'confirmDeleteModal') {
+          confirmDeleteModal.classList.add('hidden');
+          confirmDeleteModal.classList.remove('flex');
+      }
+  });
 
   timelineContainer.addEventListener('click', (e) => {
-      const delBtn = e.target.closest('.delete-log-btn');
-      if (delBtn) {
-          confirmDeleteLogText.textContent = 'Excluir esta atualização do histórico?';
-          confirmDeleteLogBtn.dataset.osId = delBtn.dataset.osId;
-          confirmDeleteLogBtn.dataset.logId = delBtn.dataset.logId;
+      const deleteButton = e.target.closest('.delete-log-btn');
+      if (deleteButton) {
+          const { osId, logId } = deleteButton.dataset;
+          confirmDeleteLogText.textContent = 'Você tem certeza que deseja excluir esta atualização do histórico? Esta ação não pode ser desfeita.';
+          confirmDeleteLogBtn.dataset.osId = osId;
+          confirmDeleteLogBtn.dataset.logId = logId;
           confirmDeleteLogModal.classList.remove('hidden');
+          confirmDeleteLogModal.classList.add('flex');
       }
   });
 
   confirmDeleteLogBtn.addEventListener('click', async () => {
       const { osId, logId } = confirmDeleteLogBtn.dataset;
-      await db.ref(`serviceOrders/${osId}/logs/${logId}`).remove();
-      const log = { timestamp: new Date().toISOString(), user: currentUser.name, description: `ATT EXCLUIDA POR: ${currentUser.name}`, type: 'log' };
-      await db.ref(`serviceOrders/${osId}/logs`).push().set(log);
-      showNotification('Atualização excluída.', 'success');
+      if (osId && logId) {
+          try {
+              await db.ref(`serviceOrders/${osId}/logs/${logId}`).remove();
+              const exclusionLogEntry = {
+                  timestamp: new Date().toISOString(),
+                  user: currentUser.name,
+                  description: `ATT EXCLUIDA POR: ${currentUser.name}`,
+                  type: 'log'
+              };
+              await db.ref(`serviceOrders/${osId}/logs`).push().set(exclusionLogEntry);
+              showNotification('Atualização excluída do histórico.', 'success');
+          } catch (error) {
+              console.error("Erro ao excluir atualização:", error);
+              showNotification('Falha ao excluir a atualização.', 'error');
+          } finally {
+              confirmDeleteLogModal.classList.add('hidden');
+              confirmDeleteLogModal.classList.remove('flex');
+          }
+      }
+  });
+
+  cancelDeleteLogBtn.addEventListener('click', () => {
       confirmDeleteLogModal.classList.add('hidden');
+      confirmDeleteLogModal.classList.remove('flex');
   });
-
-  cancelDeleteLogBtn.addEventListener('click', () => confirmDeleteLogModal.classList.add('hidden'));
-
-  confirmDeleteMediaBtn.addEventListener('click', async () => {
-      const { osId, mediaKey } = confirmDeleteMediaBtn.dataset;
-      await db.ref(`serviceOrders/${osId}/media/${mediaKey}`).remove();
-      showNotification('Mídia excluída.', 'success');
-      confirmDeleteMediaModal.classList.add('hidden');
-  });
-  cancelDeleteMediaBtn.addEventListener('click', () => confirmDeleteMediaModal.classList.add('hidden'));
 
   openCameraBtn.addEventListener('click', () => {
     mediaInput.setAttribute('accept', 'image/*');
     mediaInput.setAttribute('capture', 'camera');
+    mediaInput.multiple = true;
+    mediaInput.value = null;
     mediaInput.click();
   });
-  
+
   openGalleryBtn.addEventListener('click', () => {
     mediaInput.setAttribute('accept', 'image/*,video/*,application/pdf');
     mediaInput.removeAttribute('capture');
+    mediaInput.multiple = true;
+    mediaInput.value = null;
     mediaInput.click();
   });
 
   mediaInput.addEventListener('change', (e) => {
-    filesToUpload = Array.from(e.target.files);
-    document.getElementById('fileName').textContent = `${filesToUpload.length} arquivo(s) na fila`;
-  });
-  
-  document.getElementById('lightbox-prev').addEventListener('click', () => openLightbox(currentLightboxIndex - 1));
-  document.getElementById('lightbox-next').addEventListener('click', () => openLightbox(currentLightboxIndex + 1));
-  document.getElementById('lightbox-close').addEventListener('click', () => lightbox.classList.add('hidden'));
-  document.getElementById('lightbox-close-bg').addEventListener('click', () => lightbox.classList.add('hidden'));
-  document.getElementById('lightbox-copy').addEventListener('click', () => navigator.clipboard.writeText(lightboxMedia[currentLightboxIndex].url).then(() => showNotification('URL copiada!')));
-
-  // --- LISTENERS PAINEL GESTOR ---
-  adminPanelBtn.addEventListener('click', openAdminModal);
-
-  adminTabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-        adminTabs.forEach(t => t.classList.remove('active-tab'));
-        tab.classList.add('active-tab');
-        document.querySelectorAll('.admin-tab-content').forEach(c => c.classList.add('hidden'));
-        document.getElementById(`${tab.dataset.tab}-tab-content`).classList.remove('hidden');
-    });
-  });
-
-  addUserForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const newUser = {
-        name: document.getElementById('newUserName').value,
-        password: document.getElementById('newUserPassword').value,
-        role: document.getElementById('newUserRole').value
-    };
-    db.ref('users').push(newUser);
-    addUserForm.reset();
-    showNotification('Usuário adicionado com sucesso!', 'success');
-  });
-
-  userList.addEventListener('click', e => {
-    const changePassBtn = e.target.closest('.change-password-btn');
-    if(changePassBtn) {
-        const userId = changePassBtn.dataset.userId;
-        const user = USERS.find(u => u.id === userId);
-        userLabelForPasswordChange.textContent = user.name;
-        changePasswordForm.querySelector('#changePasswordUserId').value = userId;
-        changePasswordModal.classList.remove('hidden');
-    }
-    const deleteUserBtn = e.target.closest('.delete-user-btn');
-    if(deleteUserBtn) {
-        const { userId, userName } = deleteUserBtn.dataset;
-        confirmDeleteText.innerHTML = `Excluir o usuário <strong>${userName}</strong>? Ação irreversível.`;
-        confirmDeleteBtn.dataset.userId = userId; // Reutilizando o modal de confirmação
-        confirmDeleteModal.classList.remove('hidden');
-    }
-  });
-
-  changePasswordForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const userId = document.getElementById('changePasswordUserId').value;
-    const newPass = document.getElementById('newUserPasswordInput').value;
-    db.ref(`users/${userId}/password`).set(newPass);
-    changePasswordModal.classList.add('hidden');
-    showNotification(`Senha alterada!`, 'success');
-  });
-  cancelChangePasswordBtn.addEventListener('click', () => changePasswordModal.classList.add('hidden'));
-
-  generateReportBtn.addEventListener('click', () => {
-    const startDateStr = document.getElementById('startDate').value;
-    const endDateStr = document.getElementById('endDate').value;
-    if(!startDateStr || !endDateStr) {
-      showNotification('Por favor, selecione as datas de início e fim.', 'error');
-      return;
-    }
-    const start = new Date(startDateStr);
-    start.setHours(0, 0, 0, 0); // Início do dia
-    const end = new Date(endDateStr);
-    end.setHours(23, 59, 59, 999); // Fim do dia
-
-    const filtered = Object.values(allServiceOrders).filter(os => os.status === 'Entregue' && os.deliveredAt && new Date(os.deliveredAt) >= start && new Date(os.deliveredAt) <= end);
-    if(filtered.length === 0) {
-        reportOutput.innerHTML = '<p>Nenhuma O.S. encontrada para o período.</p>';
-        return;
-    }
-    reportOutput.innerHTML = `<p class="mb-2 font-semibold">${filtered.length} O.S. encontradas.</p><table><thead><tr><th>Placa</th><th>Modelo</th><th>Cliente</th><th>Data de Entrega</th></tr></thead><tbody>${filtered.map(os => `<tr><td>${os.placa}</td><td>${os.modelo}</td><td>${os.cliente}</td><td>${new Date(os.deliveredAt).toLocaleDateString('pt-BR')}</td></tr>`).join('')}</tbody></table>`;
-  });
-
-  exportPdfZipBtn.addEventListener('click', async () => {
-    const startDateStr = document.getElementById('startDate').value;
-    const endDateStr = document.getElementById('endDate').value;
-     if(!startDateStr || !endDateStr) {
-      showNotification('Por favor, selecione as datas para exportar.', 'error');
-      return;
-    }
-    const start = new Date(startDateStr);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(endDateStr);
-    end.setHours(23, 59, 59, 999);
-    
-    const filtered = Object.values(allServiceOrders).filter(os => os.status === 'Entregue' && os.deliveredAt && new Date(os.deliveredAt) >= start && new Date(os.deliveredAt) <= end);
-    if(filtered.length === 0) {
-        showNotification('Nenhuma O.S. encontrada para exportar.', 'error');
-        return;
-    }
-    showNotification(`Iniciando exportação de ${filtered.length} O.S....`, 'success');
-    const zip = new JSZip();
-    filtered.forEach(os => {
-        const htmlContent = generatePrintableOsHtml(os);
-        zip.file(`OS_${os.placa}_${os.cliente}.html`, htmlContent);
-    });
-    const zipBlob = await zip.generateAsync({type:"blob"});
-    saveAs(zipBlob, `Relatorio_OS_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.zip`);
-  });
-
-  // --- INICIALIZAÇÃO ---
-  db.ref('users').on('value', snapshot => {
-    const usersData = snapshot.val();
-    if (usersData) {
-        USERS = Object.entries(usersData).map(([id, data]) => ({ id, ...data }));
+    if (e.target.files.length > 0) { filesToUpload.push(...e.target.files); }
+    if (filesToUpload.length > 0) {
+      document.getElementById('fileName').textContent = `${filesToUpload.length} arquivo(s) na fila`;
     } else {
-        // Se não houver usuários, cria uma lista padrão (para o primeiro uso)
-        const defaultUsers = {
-            'user-thiago': { name: 'Thiago Ventura Valencio', role: 'Gestor de Sistema', password: 'thiago' },
-            'user-augusto': { name: 'Augusto', role: 'Gestor', password: 'augusto' },
-            'user-william': { name: 'William Barbosa', role: 'Atendente', password: 'barboza' },
-            'user-fernando': { name: 'Fernando', role: 'Mecânico', password: 'fernando' },
-            'user-gustavo': { name: 'Gustavo', role: 'Mecânico', password: 'gustavo' },
-            'user-marcelo': { name: 'Marcelo', role: 'Mecânico', password: 'marcelo' }
-        };
-        db.ref('users').set(defaultUsers);
-        // A recursão do 'on value' irá recarregar a variável USERS com os IDs corretos.
-        return;
-    }
-    
-    const loggedInUser = JSON.parse(localStorage.getItem('currentUser'));
-    if (loggedInUser) {
-        const userInDB = USERS.find(u => u.id === loggedInUser.id);
-        if (userInDB) {
-            currentUser = userInDB; // Atualiza com os dados do BD
-            localStorage.setItem('currentUser', JSON.stringify(currentUser)); // Sincroniza
-        }
-    }
-    
-    if (!currentUser) {
-        initializeLoginScreen();
-    }
-    if(!adminModal.classList.contains('hidden')) {
-        populateUserList();
+      document.getElementById('fileName').textContent = '';
     }
   });
+
+  document.getElementById('lightbox-prev').addEventListener('click', () => {
+    if (currentLightboxIndex > 0) { openLightbox(currentLightboxIndex - 1); }
+  });
+
+  document.getElementById('lightbox-next').addEventListener('click', () => {
+    if (currentLightboxIndex < lightboxMedia.length - 1) { openLightbox(currentLightboxIndex + 1); }
+  });
+
+  document.getElementById('lightbox-close').addEventListener('click', () => { lightbox.classList.add('hidden'); });
+  document.getElementById('lightbox-close-bg').addEventListener('click', () => { lightbox.classList.add('hidden'); });
+
+  document.getElementById('lightbox-copy').addEventListener('click', () => {
+    const media = lightboxMedia[currentLightboxIndex];
+    if (media && media.url) {
+        navigator.clipboard.writeText(media.url).then(() => { showNotification('URL copiada para a área de transferência!'); });
+    }
+  });
+
+  // --- INICIALIZAÇÃO DO LOGIN ---
+  initializeLoginScreen();
 });
+
