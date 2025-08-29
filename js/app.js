@@ -169,17 +169,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return `<div id="${os.id}" class="vehicle-card status-${os.status}" data-os-id="${os.id}">${priorityIndicatorHTML}<div class="flex justify-between items-start"><div class="card-clickable-area cursor-pointer flex-grow"><p class="font-bold text-base text-gray-800">${os.placa}</p><p class="text-sm text-gray-600">${os.modelo}</p><div class="text-xs mt-1">${kmInfo}</div><div class="text-xs">${responsibleInfo}</div></div><div class="flex flex-col -mt-1 -mr-1">${nextButton}${prevButton}</div></div></div>`;
   };
 
-  const renderColumn = (status) => {
-    const list = kanbanBoard.querySelector(`.vehicle-list[data-status="${status}"]`);
-    if (!list) return;
-    if (status === 'Entregue') {
-      renderDeliveredColumn();
-      return;
-    }
-    const items = Object.values(allServiceOrders).filter(os => os.status === status);
-    list.innerHTML = items.map(os => createCardHTML(os)).join('');
-  }
-
   const renderDeliveredColumn = () => {
       const list = kanbanBoard.querySelector('.vehicle-list[data-status="Entregue"]');
       if (!list) return;
@@ -192,20 +181,51 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const listenToServiceOrders = () => {
-    db.ref('serviceOrders').on('value', snapshot => {
-      allServiceOrders = snapshot.val() || {};
-      STATUS_LIST.forEach(status => renderColumn(status));
+    const osRef = db.ref('serviceOrders');
+    osRef.on('child_added', snapshot => {
+      const os = { ...snapshot.val(), id: snapshot.key };
+      allServiceOrders[os.id] = os;
+      if (os.status === 'Entregue') renderDeliveredColumn();
+      else {
+        const list = kanbanBoard.querySelector(`.vehicle-list[data-status="${os.status}"]`);
+        if (list) list.insertAdjacentHTML('beforeend', createCardHTML(os));
+      }
       updateAttentionPanel();
-       if (detailsModal.classList.contains('flex')) {
-            const osId = document.getElementById('logOsId').value;
-            if(allServiceOrders[osId]) {
-                renderTimeline(allServiceOrders[osId]);
-                renderMediaGallery(allServiceOrders[osId]);
-            } else {
-                detailsModal.classList.add('hidden');
-                showNotification("A O.S. que você estava vendo foi removida.", "error");
-            }
+    });
+    osRef.on('child_changed', snapshot => {
+      const os = { ...snapshot.val(), id: snapshot.key };
+      const oldOs = allServiceOrders[os.id];
+      allServiceOrders[os.id] = os;
+      const existingCard = document.getElementById(os.id);
+      if (oldOs && oldOs.status !== os.status) {
+        if (existingCard) existingCard.remove();
+        if (os.status === 'Entregue') renderDeliveredColumn();
+        else {
+          const newList = kanbanBoard.querySelector(`.vehicle-list[data-status="${os.status}"]`);
+          if (newList) newList.insertAdjacentHTML('beforeend', createCardHTML(os));
+        }
+        if(oldOs.status === 'Entregue') renderDeliveredColumn();
+      }
+      else if (existingCard) {
+        if (os.status === 'Entregue') renderDeliveredColumn();
+        else existingCard.outerHTML = createCardHTML(os);
+      }
+       if (detailsModal.classList.contains('flex') && document.getElementById('logOsId').value === os.id) {
+            renderTimeline(os);
+            renderMediaGallery(os);
        }
+      updateAttentionPanel();
+    });
+    osRef.on('child_removed', snapshot => {
+      const osId = snapshot.key;
+      const removedOs = allServiceOrders[osId];
+      delete allServiceOrders[osId];
+      if (removedOs && removedOs.status === 'Entregue') renderDeliveredColumn();
+      else {
+          const cardToRemove = document.getElementById(osId);
+          if (cardToRemove) cardToRemove.remove();
+      }
+      updateAttentionPanel();
     });
   };
 
@@ -441,7 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.addEventListener('click', (e) => {
     const target = e.target;
-    if (target.closest('.btn-close-modal') || target.id === 'detailsModal' || target.id === 'osModal' || target.id === 'adminModal') {
+    if (target.closest('.btn-close-modal')) {
         target.closest('.modal').classList.add('hidden');
     }
     if (!target.closest('.search-container')) globalSearchResults.classList.add('hidden');
@@ -462,7 +482,7 @@ document.addEventListener('DOMContentLoaded', () => {
   addOSBtn.addEventListener('click', () => {
     document.getElementById('osModalTitle').textContent = 'Nova Ordem de Serviço';
     osForm.reset();
-    document.getElementById('osResponsavel').innerHTML = '<option value="">Selecione...</option>' + USERS.filter(u => u.role === 'Atendente' || u.role === 'Gestor').map(u => `<option value="${u.name}">${u.name}</option>`).join('');
+    document.getElementById('osResponsavel').innerHTML = '<option value="">Selecione...</option>' + USERS.filter(u => u.role.includes('Atendente') || u.role.includes('Gestor')).map(u => `<option value="${u.name}">${u.name}</option>`).join('');
     osModal.classList.remove('hidden');
   });
   
@@ -544,6 +564,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const os = allServiceOrders[document.getElementById('logOsId').value];
     confirmDeleteText.innerHTML = `Excluir O.S. da placa <strong>${os.placa}</strong>? Ação irreversível.`;
     confirmDeleteBtn.dataset.osId = os.id;
+    delete confirmDeleteBtn.dataset.userId; // Garante que não vai excluir usuário
     confirmDeleteModal.classList.remove('hidden');
   });
 
@@ -575,7 +596,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   confirmDeleteLogBtn.addEventListener('click', async () => {
       const { osId, logId } = confirmDeleteLogBtn.dataset;
-      await db.ref(`serviceOrders/${osId}/logs/${logId}`).set({
+      const logRef = db.ref(`serviceOrders/${osId}/logs/${logId}`);
+      await logRef.set({
           timestamp: new Date().toISOString(),
           user: currentUser.name,
           description: `ATT EXCLUIDA POR: ${currentUser.name}`,
@@ -724,3 +746,4 @@ document.addEventListener('DOMContentLoaded', () => {
     if(!adminModal.classList.contains('hidden')) populateUserList();
   });
 });
+
