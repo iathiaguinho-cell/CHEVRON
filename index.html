@@ -59,7 +59,7 @@
         <div class="relative w-full max-w-xs ml-4 search-container">
              <input type="search" id="globalSearchInput" placeholder="Buscar veículo por placa..." class="w-full p-2 pl-10 text-sm border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500">
              <i class='bx bx-search text-gray-400 absolute left-3 top-1/2 -translate-y-1/2'></i>
-             <div id="globalSearchResults" class="absolute top-full mt-2 w-full bg-white border rounded-lg shadow-xl z-50 hidden"></div>
+             <div id="globalSearchResults" class="absolute top-full mt-2 w-full bg-white border rounded-lg shadow-xl z-50 hidden max-h-60 overflow-y-auto"></div>
         </div>
         <div class="flex items-center gap-4">
           <button id="addOSBtn" class="btn bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 flex items-center gap-2">
@@ -145,8 +145,8 @@
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn-close-modal btn bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2">Cancelar</button>
-        <button type="submit" form="osForm" class="btn bg-blue-600 hover:bg-blue-700 text-white px-4 py-2">Salvar</button>
+        <button type="button" class="btn-close-modal btn bg-gray-200 hover:bg-gray-300 text-gray-800">Cancelar</button>
+        <button type="submit" form="osForm" class="btn bg-blue-600 hover:bg-blue-700 text-white">Salvar</button>
       </div>
     </div>
   </div>
@@ -192,7 +192,7 @@
               
               <div class="bg-white rounded-lg shadow p-4">
                 <h3 class="section-title">Histórico da O.S.</h3>
-                <div id="timelineContainer" class="timeline mt-4 space-y-6"></div>
+                <div id="timelineContainer" class="timeline mt-4 space-y-6 max-h-[400px] overflow-y-auto pr-2"></div>
               </div>
             </div>
             
@@ -208,17 +208,17 @@
                     </div>
                     <div>
                         <div class="grid grid-cols-2 gap-2">
-                            <button type="button" id="openCameraBtn" class="w-full btn bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 flex items-center justify-center gap-2 cursor-pointer">
+                            <button type="button" id="openCameraBtn" class="w-full btn bg-gray-600 hover:bg-gray-700 text-white">
                                 <i class='bx bxs-camera'></i> Câmera
                             </button>
-                            <button type="button" id="openGalleryBtn" class="w-full btn bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 flex items-center justify-center gap-2 cursor-pointer">
+                            <button type="button" id="openGalleryBtn" class="w-full btn bg-gray-600 hover:bg-gray-700 text-white">
                                 <i class='bx bxs-image-add'></i> Galeria
                             </button>
                         </div>
                       <input id="media-input" type="file" class="hidden" multiple accept="image/*,video/*,application/pdf">
                       <p id="fileName" class="text-sm text-gray-500 mt-1 truncate"></p>
                     </div>
-                    <button type="submit" class="w-full btn bg-green-600 hover:bg-green-700 text-white px-4 py-2 flex items-center justify-center gap-2">
+                    <button type="submit" class="w-full btn bg-green-600 hover:bg-green-700 text-white">
                       <i class='bx bx-message-square-add'></i> Adicionar
                     </button>
                   </form>
@@ -280,6 +280,7 @@
                                     <option value="Atendente">Atendente</option>
                                     <option value="Mecânico">Mecânico</option>
                                     <option value="Gestor">Gestor</option>
+                                    <option value="Gestor de Sistema">Gestor de Sistema</option>
                                 </select>
                                 <button type="submit" class="w-full btn bg-blue-600 text-white">Adicionar Usuário</button>
                             </form>
@@ -304,10 +305,10 @@
                                 <input type="date" id="endDate" class="p-2 border rounded w-full">
                             </div>
                             <button id="generateReportBtn" class="btn bg-green-600 text-white">Gerar Relatório</button>
-                            <button id="exportPdfZipBtn" class="btn bg-gray-800 text-white">Exportar PDFs em .ZIP</button>
+                            <button id="exportPdfZipBtn" class="btn bg-gray-800 text-white">Exportar HTMLs em .ZIP</button>
                         </div>
                     </div>
-                    <div id="reportOutput" class="mt-6"></div>
+                    <div id="reportOutput" class="mt-6 max-h-80 overflow-y-auto"></div>
                 </div>
             </div>
         </div>
@@ -367,7 +368,7 @@
 
   <div id="changePasswordModal" class="modal fixed inset-0 z-[102] hidden items-center justify-center p-4">
     <div class="modal-content w-full max-w-sm">
-        <div class="modal-header"><h2 class="text-xl font-bold text-gray-800">Alterar Senha</h2></div>
+        <div class="modal-header"><h2 class="text-xl font-bold text-gray-800">Alterar Senha</h2><button class="btn-close-modal text-3xl text-gray-400 hover:text-gray-600">&times;</button></div>
         <div class="modal-body">
             <form id="changePasswordForm" class="space-y-4">
                 <input type="hidden" id="changePasswordUserId">
