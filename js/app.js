@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const USERS = [
     { name: 'Augusto', role: 'Gestor', password: 'augusto' },
     { name: 'William Barbosa', role: 'Atendente', password: 'barboza' },
-    { name: 'Thiago Ventura Valencio', role: 'Atendente', password: 'thiago' },
+    { name: 'Thiago Ventura Valencio', role: 'Atendente', password: '1940' },
     { name: 'Fernando', role: 'Mecânico', password: 'fernando' },
     { name: 'Gustavo', role: 'Mecânico', password: 'gustavo' },
     { name: 'Marcelo', role: 'Mecânico', password: 'marcelo' }
