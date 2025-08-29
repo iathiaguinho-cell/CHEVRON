@@ -85,9 +85,6 @@ body {
   padding: 1rem 1.5rem;
   position: relative;
   flex-shrink: 0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
 
 .modal-body {
@@ -102,7 +99,6 @@ body {
   padding: 1rem 1.5rem;
   display: flex;
   justify-content: flex-end;
-  gap: 0.5rem;
   flex-shrink: 0;
 }
 
@@ -168,7 +164,6 @@ body {
   justify-content: center;
   transition: all 0.2s ease;
   opacity: 0.5;
-  cursor: pointer;
 }
 
 .timeline-item:hover .delete-log-btn {
@@ -216,7 +211,7 @@ body {
 @keyframes blink-autorizado { 50% { background-color: #064e3b; } }
 @keyframes blink-finalizado { 50% { background-color: #7c2d12; } }
 
-/* =============== LIGHTBOX E GALERIA =============== */
+/* =============== LIGHTBOX =============== */
 #lightbox {
     background: rgba(0,0,0,0.85); 
     backdrop-filter: blur(8px);
@@ -228,38 +223,6 @@ body {
   max-height: 80vh; 
   max-width: 80vw; 
 }
-
-.thumbnail-item {
-  position: relative;
-  cursor: pointer;
-}
-
-.delete-media-btn {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  background-color: rgba(239, 68, 68, 0.8);
-  color: white;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  z-index: 10;
-}
-
-.thumbnail-item:hover .delete-media-btn {
-  display: flex;
-}
-
-.delete-media-btn:hover {
-  background-color: #dc2626;
-  transform: scale(1.1);
-}
-
 
 /* =============== BUSCA UNIVERSAL =============== */
 .search-result-item {
@@ -307,7 +270,7 @@ body {
   border-radius: 8px;
   color: white;
   font-weight: 500;
-  z-index: 999999;
+  z-index: 9999;
   transform: translateX(120%);
   transition: transform 0.3s ease;
   max-width: 300px;
@@ -390,39 +353,3 @@ body {
 .priority-indicator.priority-verde {
   background-color: #22c55e; /* green-500 */
 }
-
-/* =============== PAINEL DO GESTOR =============== */
-.admin-tab {
-    padding: 0.75rem 1.5rem;
-    cursor: pointer;
-    border-bottom: 3px solid transparent;
-    transition: all 0.2s ease;
-    font-weight: 600;
-    color: #4b5563;
-}
-
-.admin-tab:hover {
-    background-color: #f9fafb;
-    color: #1f2937;
-}
-
-.admin-tab.active-tab {
-    border-bottom-color: #3b82f6;
-    color: #3b82f6;
-}
-
-#reportOutput table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-#reportOutput th, #reportOutput td {
-    border: 1px solid #e5e7eb;
-    padding: 0.5rem;
-    text-align: left;
-}
-
-#reportOutput th {
-    background-color: #f3f4f6;
-}
-
