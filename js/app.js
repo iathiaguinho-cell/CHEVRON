@@ -449,7 +449,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!isoString) return 'N/A';
         return new Date(isoString).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
     };
-    const logs = os.logs ? Object.values(os.logs).sort((a,b]) => new Date(a.timestamp) - new Date(b.timestamp)) : [];
+    const logs = os.logs ? Object.values(os.logs).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)) : [];
     let totalValue = 0;
     const timelineHtml = logs.map(log => {
         if (log.value) { totalValue += parseFloat(log.value); }
@@ -585,8 +585,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   document.addEventListener('click', (e) => {
-    if (e.target.closest('.btn-close-modal') || e.target.id === 'detailsModal') { detailsModal.classList.add('hidden'); }
-    if (e.target.closest('.btn-close-modal') || e.target.id === 'osModal') { osModal.classList.add('hidden'); }
+    const thumbnailItem = e.target.closest('.thumbnail-item');
+    if (thumbnailItem && thumbnailItem.dataset.index !== undefined) {
+      openLightbox(parseInt(thumbnailItem.dataset.index));
+      return;
+    }
+    
+    if (e.target.closest('.btn-close-modal') || e.target.id === 'detailsModal') { 
+        detailsModal.classList.add('hidden'); 
+    }
+    if (e.target.closest('.btn-close-modal') || e.target.id === 'osModal') { 
+        osModal.classList.add('hidden'); 
+    }
     
     // Esconde os resultados da busca se clicar fora da área de busca
     const searchContainer = document.querySelector('.search-container');
