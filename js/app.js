@@ -135,7 +135,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const globalSearchInput = document.getElementById('globalSearchInput');
   const globalSearchResults = document.getElementById('globalSearchResults');
   const timelineContainer = document.getElementById('timelineContainer');
-  // Novos seletores para o modal de exclusão de log
   const confirmDeleteLogModal = document.getElementById('confirmDeleteLogModal');
   const confirmDeleteLogText = document.getElementById('confirmDeleteLogText');
   const cancelDeleteLogBtn = document.getElementById('cancelDeleteLogBtn');
@@ -235,7 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const searchTerm = searchInput ? searchInput.value.toUpperCase().trim() : '';
       let deliveredItems = Object.values(allServiceOrders).filter(os => os.status === 'Entregue');
       if (searchTerm) {
-          deliveredItems = deliveredItems.filter(os => os.placa.toUpperCase().includes(searchTerm) || os.modelo.toUpperCase().includes(searchTerm));
+          deliveredItems = deliveredItems.filter(os => (os.placa && os.placa.toUpperCase().includes(searchTerm)) || (os.modelo && os.modelo.toUpperCase().includes(searchTerm)));
       }
       deliveredItems.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       list.innerHTML = deliveredItems.map(os => createCardHTML(os)).join('');
@@ -406,14 +405,14 @@ document.addEventListener('DOMContentLoaded', () => {
       if (log.type === 'status') { iconClass = 'bx-transfer'; itemClass = 'timeline-item-status'; }
       else if (log.value) { iconClass = 'bx-dollar'; itemClass = 'timeline-item-value'; }
 
-      const canDelete = (currentUser.role === 'Gestor' || currentUser.role === 'Atendente') && !log.description.startsWith('ATT EXCLUIDA');
+      const canDelete = (currentUser.role === 'Gestor' || currentUser.role === 'Atendente') && log.description && !log.description.startsWith('ATT EXCLUIDA');
       const deleteButtonHTML = canDelete
         ? `<button class="delete-log-btn" data-os-id="${os.id}" data-log-id="${logId}" title="Excluir esta atualização"><i class='bx bx-x text-lg'></i></button>`
         : '';
 
-      const descriptionHTML = log.description.startsWith('ATT EXCLUIDA')
+      const descriptionHTML = log.description && log.description.startsWith('ATT EXCLUIDA')
         ? `<p class="text-red-500 italic text-sm">${log.description}</p>`
-        : `<p class="text-gray-700 text-sm">${log.description}</p>`;
+        : `<p class="text-gray-700 text-sm">${log.description || ''}</p>`;
 
       return `<div class="timeline-item ${itemClass}"><div class="timeline-icon"><i class='bx ${iconClass}'></i></div><div class="bg-gray-50 p-3 rounded-lg relative">${deleteButtonHTML}<div class="flex justify-between items-start mb-1"><h4 class="font-semibold text-gray-800 text-sm">${log.user}</h4><span class="text-xs text-gray-500">${formattedDate} ${formattedTime}</span></div>${descriptionHTML}${log.parts ? `<p class="text-gray-600 text-xs mt-1"><strong>Peças:</strong> ${log.parts}</p>` : ''}${log.value ? `<p class="text-green-600 text-xs mt-1"><strong>Valor:</strong> R$ ${parseFloat(log.value).toFixed(2)}</p>` : ''}</div></div>`;
     }).join('');
@@ -428,6 +427,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const media = os.media || [];
     lightboxMedia = Object.values(media);
     thumbnailGrid.innerHTML = lightboxMedia.map((item, index) => {
+        if (!item || !item.type) return '';
         const isImage = item.type.startsWith('image/');
         const isVideo = item.type.startsWith('video/');
         const isPdf = item.type === 'application/pdf';
@@ -456,7 +456,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return `<tr><td>${formatDate(log.timestamp)}</td><td>${log.user}</td><td>${log.description}</td><td>${log.parts || '---'}</td><td style="text-align: right;">${log.value ? `R$ ${parseFloat(log.value).toFixed(2)}` : '---'}</td></tr>`;
     }).join('');
     const media = os.media ? Object.values(os.media) : [];
-    const photos = media.filter(item => item.type.startsWith('image/'));
+    const photos = media.filter(item => item && item.type.startsWith('image/'));
     const photosHtml = photos.length > 0 ? `<div class="section"><h2>Fotos Anexadas</h2><div class="photo-gallery">${photos.map(photo => `<img src="${photo.url}" alt="Foto da O.S.">`).join('')}</div></div>` : '';
     const printHtml = `<html><head><title>Ordem de Serviço - ${os.placa}</title><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;margin:0;padding:20px;color:#333}.container{max-width:800px;margin:auto}.header{text-align:center;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:20px}.header h1{margin:0;font-size:24px}.header p{margin:5px 0}.section{margin-bottom:20px;border:1px solid #ccc;border-radius:8px;padding:15px;page-break-inside:avoid}.section h2{margin-top:0;font-size:18px;border-bottom:1px solid #eee;padding-bottom:5px;margin-bottom:10px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid-item strong{display:block;color:#555}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #ddd;padding:8px;text-align:left;font-size:14px}th{background-color:#f2f2f2}.total{text-align:right;font-size:18px;font-weight:bold;margin-top:20px}.footer{text-align:center;margin-top:50px;padding-top:20px;border-top:1px solid #ccc}.signature{margin-top:60px}.signature-line{border-bottom:1px solid #000;width:300px;margin:0 auto}.signature p{margin-top:5px;font-size:14px}.photo-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:10px}.photo-gallery img{width:100%;height:auto;border:1px solid #ddd;border-radius:4px}.dev-signature{margin-top:40px;font-size:12px;color:#888}.dev-signature strong{color:#555}@media print{body{padding:10px}.no-print{display:none}}</style></head><body><div class="container"><div class="header"><h1>CHEVRON Bosch Car Service</h1><p>Ordem de Serviço</p></div><div class="section"><h2>Detalhes da O.S.</h2><div class="grid"><div class="grid-item"><strong>Placa:</strong> ${os.placa}</div><div class="grid-item"><strong>Modelo:</strong> ${os.modelo}</div><div class="grid-item"><strong>Cliente:</strong> ${os.cliente}</div><div class="grid-item"><strong>Telefone:</strong> ${os.telefone||"N/A"}</div><div class="grid-item"><strong>KM:</strong> ${os.km?new Intl.NumberFormat("pt-BR").format(os.km):"N/A"}</div><div class="grid-item"><strong>Data de Abertura:</strong> ${formatDate(os.createdAt)}</div><div class="grid-item"><strong>Atendente:</strong> ${os.responsible||"N/A"}</div></div></div>${os.observacoes?`<div class="section"><h2>Queixa do Cliente / Observações Iniciais</h2><p style="white-space: pre-wrap;">${os.observacoes}</p></div>`:""}<div class="section"><h2>Histórico de Serviços e Peças</h2><table><thead><tr><th>Data/Hora</th><th>Usuário</th><th>Descrição</th><th>Peças</th><th style="text-align: right;">Valor</th></tr></thead><tbody>${timelineHtml||'<tr><td colspan="5" style="text-align: center;">Nenhum registro no histórico.</td></tr>'}</tbody></table><div class="total">Total: R$ ${totalValue.toFixed(2)}</div></div>${photosHtml}<div class="footer"><div class="signature"><div class="signature-line"></div><p>Assinatura do Cliente</p></div><p>Documento gerado em: ${new Date().toLocaleString("pt-BR")}</p></div></div><script>window.onload=function(){window.print();setTimeout(function(){window.close()},100)}<\/script></body></html>`;
     const printWindow = window.open('', '_blank');
@@ -468,6 +468,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!lightboxMedia || lightboxMedia.length === 0) return;
     currentLightboxIndex = index;
     const media = lightboxMedia[index];
+    if (!media || !media.type) return; 
     if (media.type === 'application/pdf') { window.open(media.url, '_blank'); return; }
     const lightboxContent = document.getElementById('lightbox-content');
     if (media.type.startsWith('image/')) {
@@ -554,7 +555,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
     
-    // CORREÇÃO: Verifica se 'os.placa' existe antes de usar 'toUpperCase()'
     const matchingOrders = Object.values(allServiceOrders)
         .filter(os => os.placa && os.placa.toUpperCase().includes(searchTerm))
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); 
@@ -584,14 +584,22 @@ document.addEventListener('DOMContentLoaded', () => {
       }
   });
 
-
+  // Listener de clique geral para fechar modais E abrir lightbox
   document.addEventListener('click', (e) => {
+    // Fecha modais
     if (e.target.closest('.btn-close-modal') || e.target.id === 'detailsModal') { detailsModal.classList.add('hidden'); }
     if (e.target.closest('.btn-close-modal') || e.target.id === 'osModal') { osModal.classList.add('hidden'); }
     
+    // Esconde resultados da busca ao clicar fora
     const searchContainer = document.querySelector('.search-container');
     if (searchContainer && !searchContainer.contains(e.target)) {
         globalSearchResults.classList.add('hidden');
+    }
+
+    // **FIX**: Abre o lightbox ao clicar em uma miniatura
+    const thumbnailItem = e.target.closest('.thumbnail-item');
+    if (thumbnailItem && thumbnailItem.dataset.index !== undefined) {
+      openLightbox(parseInt(thumbnailItem.dataset.index));
     }
   });
 
@@ -828,7 +836,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('lightbox-copy').addEventListener('click', () => {
     const media = lightboxMedia[currentLightboxIndex];
-    navigator.clipboard.writeText(media.url).then(() => { showNotification('URL copiada para a área de transferência!'); });
+    if (media && media.url) {
+        navigator.clipboard.writeText(media.url).then(() => { showNotification('URL copiada para a área de transferência!'); });
+    }
   });
 
   // --- INICIALIZAÇÃO DO LOGIN ---
