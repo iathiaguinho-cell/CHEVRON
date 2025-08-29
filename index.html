@@ -15,7 +15,6 @@
 </head>
 <body class="bg-gray-100">
 
-  <!-- TELA DE LOGIN -->
   <div id="userScreen" class="flex items-center justify-center min-h-screen p-4">
     <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-sm text-center">
       <h1 class="text-3xl font-bold text-gray-800 mb-2">CHEVRON</h1>
@@ -24,7 +23,7 @@
         <div class="mb-4">
           <label for="userSelect" class="block text-sm font-medium text-gray-700 mb-1">Usuário</label>
           <select id="userSelect" required class="p-2 border rounded w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
-            <option value="">Carregando usuários...</option>
+            <option value="">Selecione seu usuário...</option>
           </select>
         </div>
         <div class="mb-6">
@@ -39,13 +38,12 @@
     </div>
   </div>
 
-  <!-- APLICAÇÃO PRINCIPAL -->
   <div id="app" class="hidden">
     <header class="bg-white shadow-md sticky top-0 z-40">
       <div id="attention-panel-container">
         <div id="attention-panel" class="grid grid-cols-1 sm:grid-cols-2 gap-2 p-2"></div>
       </div>
-      <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
+      <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center gap-4">
         <div class="flex items-center gap-3">
             <div>
                 <h1 class="text-xl font-bold text-gray-800">CHEVRON</h1>
@@ -56,23 +54,21 @@
                 <i class='bx bxs-chevron-up text-2xl'></i>
             </button>
         </div>
-        <div class="relative w-full max-w-xs ml-4 search-container">
-             <input type="search" id="globalSearchInput" placeholder="Buscar veículo por placa..." class="w-full p-2 pl-10 text-sm border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500">
-             <i class='bx bx-search text-gray-400 absolute left-3 top-1/2 -translate-y-1/2'></i>
-             <div id="globalSearchResults" class="absolute top-full mt-2 w-full bg-white border rounded-lg shadow-xl z-50 hidden max-h-60 overflow-y-auto"></div>
+        
+        <div class="flex-grow max-w-md relative search-container">
+            <input type="search" id="globalSearchInput" placeholder="Buscar por Placa..." class="w-full p-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <div id="globalSearchResults" class="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-b-md shadow-lg z-50 hidden max-h-60 overflow-y-auto">
+                <!-- Search results will be injected here by JS -->
+            </div>
         </div>
+
         <div class="flex items-center gap-4">
           <button id="addOSBtn" class="btn bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 flex items-center gap-2">
             <i class='bx bx-plus-circle'></i><span class="hidden sm:inline">Nova O.S.</span>
           </button>
-          <div class="text-right flex items-center gap-3">
-             <div>
-                <p id="currentUserName" class="font-semibold text-gray-700"></p>
-                <button id="logoutButton" class="text-sm text-red-500 hover:text-red-700">Sair</button>
-            </div>
-            <button id="adminPanelBtn" class="btn bg-gray-700 hover:bg-gray-800 text-white p-2 rounded-full hidden" title="Painel do Gestor">
-                <i class='bx bxs-cog text-xl'></i>
-            </button>
+          <div class="text-right">
+            <p id="currentUserName" class="font-semibold text-gray-700"></p>
+            <button id="logoutButton" class="text-sm text-red-500 hover:text-red-700">Sair</button>
           </div>
         </div>
       </div>
@@ -83,12 +79,10 @@
     </main>
   </div>
 
-  <!-- MODAL: NOVA ORDEM DE SERVIÇO -->
   <div id="osModal" class="modal fixed inset-0 z-50 hidden items-center justify-center p-4">
     <div class="modal-content w-full max-w-lg">
       <div class="modal-header">
         <h2 id="osModalTitle" class="text-2xl font-bold text-gray-800">Nova Ordem de Serviço</h2>
-        <button class="btn-close-modal text-3xl text-gray-400 hover:text-gray-600">&times;</button>
       </div>
       <div class="modal-body">
         <form id="osForm" class="space-y-4">
@@ -145,18 +139,19 @@
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn-close-modal btn bg-gray-200 hover:bg-gray-300 text-gray-800">Cancelar</button>
-        <button type="submit" form="osForm" class="btn bg-blue-600 hover:bg-blue-700 text-white">Salvar</button>
+        <button type="button" class="btn-close-modal btn bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2">Cancelar</button>
+        <button type="submit" form="osForm" class="btn bg-blue-600 hover:bg-blue-700 text-white px-4 py-2">Salvar</button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL: DETALHES DA O.S. -->
   <div id="detailsModal" class="modal fixed inset-0 z-50 hidden items-center justify-center p-4">
     <div class="modal-content w-full max-w-6xl">
       <div class="modal-header">
-        <h2 class="text-2xl font-bold text-gray-800">Detalhes da Ordem de Serviço</h2>
-        <button class="btn-close-modal text-3xl text-gray-400 hover:text-gray-600">&times;</button>
+        <div class="flex justify-between items-start">
+          <h2 class="text-2xl font-bold text-gray-800">Detalhes da Ordem de Serviço</h2>
+          <button class="btn-close-modal text-3xl text-gray-400 hover:text-gray-600">&times;</button>
+        </div>
       </div>
       
       <div class="modal-body">
@@ -192,7 +187,7 @@
               
               <div class="bg-white rounded-lg shadow p-4">
                 <h3 class="section-title">Histórico da O.S.</h3>
-                <div id="timelineContainer" class="timeline mt-4 space-y-6 max-h-[400px] overflow-y-auto pr-2"></div>
+                <div id="timelineContainer" class="timeline mt-4 space-y-6"></div>
               </div>
             </div>
             
@@ -208,18 +203,18 @@
                     </div>
                     <div>
                         <div class="grid grid-cols-2 gap-2">
-                            <button type="button" id="openCameraBtn" class="w-full btn bg-gray-600 hover:bg-gray-700 text-white">
+                            <button type="button" id="openCameraBtn" class="w-full btn bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 flex items-center justify-center gap-2 cursor-pointer">
                                 <i class='bx bxs-camera'></i> Câmera
                             </button>
-                            <button type="button" id="openGalleryBtn" class="w-full btn bg-gray-600 hover:bg-gray-700 text-white">
+                            <button type="button" id="openGalleryBtn" class="w-full btn bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 flex items-center justify-center gap-2 cursor-pointer">
                                 <i class='bx bxs-image-add'></i> Galeria
                             </button>
                         </div>
                       <input id="media-input" type="file" class="hidden" multiple accept="image/*,video/*,application/pdf">
                       <p id="fileName" class="text-sm text-gray-500 mt-1 truncate"></p>
                     </div>
-                    <button type="submit" class="w-full btn bg-green-600 hover:bg-green-700 text-white">
-                      <i class='bx bx-message-square-add'></i> Adicionar
+                    <button type="submit" class="w-full btn bg-green-600 hover:bg-green-700 text-white px-4 py-2 flex items-center justify-center gap-2">
+                      <i class='bx bx-message-square-add'></i> Adicionar ao Histórico
                     </button>
                   </form>
                   <div id="post-log-actions" class="hidden mt-4 border-t pt-4 space-y-2">
@@ -255,67 +250,6 @@
     </div>
   </div>
 
-  <!-- MODAL: PAINEL DO GESTOR -->
-  <div id="adminModal" class="modal fixed inset-0 z-[60] hidden items-center justify-center p-4">
-    <div class="modal-content w-full max-w-4xl">
-        <div class="modal-header">
-            <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class='bx bxs-cog'></i>Painel do Gestor</h2>
-            <button class="btn-close-modal text-3xl text-gray-400 hover:text-gray-600">&times;</button>
-        </div>
-        <div class="modal-body !p-0">
-            <div class="flex border-b">
-                <button data-tab="users" class="admin-tab active-tab">Gerenciar Usuários</button>
-                <button data-tab="reports" class="admin-tab">Relatórios</button>
-            </div>
-            <div class="p-6">
-                <!-- ABA: Gerenciar Usuários -->
-                <div id="users-tab-content" class="admin-tab-content">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <h3 class="section-title">Adicionar Novo Usuário</h3>
-                            <form id="addUserForm" class="space-y-4 mt-4 bg-gray-50 p-4 rounded-lg">
-                                <input type="text" id="newUserName" placeholder="Nome completo" required class="p-2 border rounded w-full">
-                                <input type="password" id="newUserPassword" placeholder="Senha" required class="p-2 border rounded w-full">
-                                <select id="newUserRole" required class="p-2 border rounded w-full bg-white">
-                                    <option value="Atendente">Atendente</option>
-                                    <option value="Mecânico">Mecânico</option>
-                                    <option value="Gestor">Gestor</option>
-                                    <option value="Gestor de Sistema">Gestor de Sistema</option>
-                                </select>
-                                <button type="submit" class="w-full btn bg-blue-600 text-white">Adicionar Usuário</button>
-                            </form>
-                        </div>
-                        <div>
-                            <h3 class="section-title">Usuários Atuais</h3>
-                            <div id="userList" class="space-y-2 mt-4 max-h-60 overflow-y-auto pr-2"></div>
-                        </div>
-                    </div>
-                </div>
-                <!-- ABA: Relatórios -->
-                <div id="reports-tab-content" class="admin-tab-content hidden">
-                    <h3 class="section-title">Relatórios de Ordens de Serviço</h3>
-                     <div class="mt-4 p-4 bg-gray-50 rounded-lg">
-                        <div class="flex flex-wrap items-end gap-4">
-                            <div>
-                                <label for="startDate" class="block text-sm font-medium text-gray-700">Data Inicial</label>
-                                <input type="date" id="startDate" class="p-2 border rounded w-full">
-                            </div>
-                            <div>
-                                <label for="endDate" class="block text-sm font-medium text-gray-700">Data Final</label>
-                                <input type="date" id="endDate" class="p-2 border rounded w-full">
-                            </div>
-                            <button id="generateReportBtn" class="btn bg-green-600 text-white">Gerar Relatório</button>
-                            <button id="exportPdfZipBtn" class="btn bg-gray-800 text-white">Exportar HTMLs em .ZIP</button>
-                        </div>
-                    </div>
-                    <div id="reportOutput" class="mt-6 max-h-80 overflow-y-auto"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-  </div>
-
-  <!-- MODAL: LIGHTBOX DE MÍDIA -->
   <div id="lightbox" class="modal fixed inset-0 z-[100] hidden items-center justify-center p-4">
     <div class="absolute inset-0" id="lightbox-close-bg"></div>
     <div class="relative bg-black bg-opacity-50 p-4 rounded-lg max-w-4xl w-full">
@@ -330,67 +264,41 @@
     </div>
   </div>
 
-  <!-- MODAIS DE CONFIRMAÇÃO -->
   <div id="confirmDeleteModal" class="modal fixed inset-0 z-[101] hidden items-center justify-center p-4">
     <div class="modal-content w-full max-w-md">
         <div class="modal-header">
             <h2 class="text-xl font-bold text-red-600 flex items-center gap-2"><i class='bx bxs-error-circle'></i>Confirmar Exclusão</h2>
         </div>
-        <div class="modal-body"><p id="confirmDeleteText"></p></div>
+        <div class="modal-body">
+            <p id="confirmDeleteText" class="text-gray-700">Você tem certeza que deseja excluir esta Ordem de Serviço? Esta ação não pode ser desfeita.</p>
+        </div>
         <div class="modal-footer">
             <button id="cancelDeleteBtn" class="btn bg-gray-200 hover:bg-gray-300 text-gray-800">Cancelar</button>
             <button id="confirmDeleteBtn" class="btn bg-red-600 hover:bg-red-700 text-white">Sim, Excluir</button>
         </div>
     </div>
   </div>
-  
-  <div id="confirmDeleteLogModal" class="modal fixed inset-0 z-[101] hidden items-center justify-center p-4">
-      <div class="modal-content w-full max-w-md">
-          <div class="modal-header"><h2 class="text-xl font-bold text-red-600">Confirmar Exclusão</h2></div>
-          <div class="modal-body"><p id="confirmDeleteLogText"></p></div>
-          <div class="modal-footer">
-              <button id="cancelDeleteLogBtn" class="btn bg-gray-200">Cancelar</button>
-              <button id="confirmDeleteLogBtn" class="btn bg-red-600 text-white">Sim, Excluir</button>
-          </div>
-      </div>
-  </div>
-  
-  <div id="confirmDeleteMediaModal" class="modal fixed inset-0 z-[101] hidden items-center justify-center p-4">
-      <div class="modal-content w-full max-w-md">
-          <div class="modal-header"><h2 class="text-xl font-bold text-red-600">Confirmar Exclusão</h2></div>
-          <div class="modal-body"><p>Tem certeza que deseja excluir esta mídia permanentemente?</p></div>
-          <div class="modal-footer">
-              <button id="cancelDeleteMediaBtn" class="btn bg-gray-200">Cancelar</button>
-              <button id="confirmDeleteMediaBtn" class="btn bg-red-600 text-white">Sim, Excluir</button>
-          </div>
-      </div>
-  </div>
 
-  <div id="changePasswordModal" class="modal fixed inset-0 z-[102] hidden items-center justify-center p-4">
-    <div class="modal-content w-full max-w-sm">
-        <div class="modal-header"><h2 class="text-xl font-bold text-gray-800">Alterar Senha</h2><button class="btn-close-modal text-3xl text-gray-400 hover:text-gray-600">&times;</button></div>
+  <div id="confirmDeleteLogModal" class="modal fixed inset-0 z-[101] hidden items-center justify-center p-4">
+    <div class="modal-content w-full max-w-md">
+        <div class="modal-header">
+            <h2 class="text-xl font-bold text-red-600 flex items-center gap-2"><i class='bx bxs-error-circle'></i>Confirmar Exclusão de Atualização</h2>
+        </div>
         <div class="modal-body">
-            <form id="changePasswordForm" class="space-y-4">
-                <input type="hidden" id="changePasswordUserId">
-                <p>Alterando senha para <strong id="userLabelForPasswordChange"></strong>.</p>
-                <input type="password" id="newUserPasswordInput" placeholder="Digite a nova senha" required class="p-2 border rounded w-full">
-            </form>
+            <p id="confirmDeleteLogText" class="text-gray-700">Você tem certeza que deseja excluir esta atualização do histórico?</p>
         </div>
         <div class="modal-footer">
-            <button id="cancelChangePasswordBtn" class="btn bg-gray-200">Cancelar</button>
-            <button type="submit" form="changePasswordForm" class="btn bg-blue-600 text-white">Salvar Nova Senha</button>
+            <button id="cancelDeleteLogBtn" class="btn bg-gray-200 hover:bg-gray-300 text-gray-800">Cancelar</button>
+            <button id="confirmDeleteLogBtn" class="btn bg-red-600 hover:bg-red-700 text-white">Sim, Excluir</button>
         </div>
     </div>
-</div>
+  </div>
 
 
-  <!-- SCRIPTS -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
   <script src="js/app.js"></script>
   
 </body>
 </html>
-
