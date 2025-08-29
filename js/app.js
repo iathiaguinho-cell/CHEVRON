@@ -133,6 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
   const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
   const globalSearchInput = document.getElementById('globalSearchInput');
+  const globalSearchResults = document.getElementById('globalSearchResults');
   const timelineContainer = document.getElementById('timelineContainer');
   // Novos seletores para o modal de exclusão de log
   const confirmDeleteLogModal = document.getElementById('confirmDeleteLogModal');
@@ -448,7 +449,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!isoString) return 'N/A';
         return new Date(isoString).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
     };
-    const logs = os.logs ? Object.values(os.logs).sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp)) : [];
+    const logs = os.logs ? Object.values(os.logs).sort((a,b]) => new Date(a.timestamp) - new Date(b.timestamp)) : [];
     let totalValue = 0;
     const timelineHtml = logs.map(log => {
         if (log.value) { totalValue += parseFloat(log.value); }
@@ -545,48 +546,53 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   globalSearchInput.addEventListener('input', (e) => {
-      const searchTerm = e.target.value.toUpperCase().trim();
-      document.querySelectorAll('.vehicle-card.highlight').forEach(card => card.classList.remove('highlight'));
+    const searchTerm = e.target.value.toUpperCase().trim();
 
-      if (!searchTerm) {
-          document.querySelectorAll('.vehicle-card').forEach(card => {
-            const os = allServiceOrders[card.id];
-            if (os && os.status !== 'Entregue') {
-              card.style.display = '';
-            }
-          });
-          return;
-      }
+    if (!searchTerm) {
+        globalSearchResults.innerHTML = '';
+        globalSearchResults.classList.add('hidden');
+        return;
+    }
 
-      let foundCard = null;
-      const osFound = Object.values(allServiceOrders).find(os => os.status !== 'Entregue' && os.placa.toUpperCase().includes(searchTerm));
+    const matchingOrders = Object.values(allServiceOrders)
+        .filter(os => os.placa.toUpperCase().includes(searchTerm))
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); // Mostra os mais recentes primeiro
 
-      document.querySelectorAll('.vehicle-card').forEach(card => {
-        const os = allServiceOrders[card.id];
-        if(os && os.status !== 'Entregue') {
-          card.style.display = 'none';
-        }
-      });
-
-      if (osFound) {
-          foundCard = document.getElementById(osFound.id);
-          if (foundCard) {
-              foundCard.style.display = '';
-              foundCard.classList.add('highlight');
-              const list = foundCard.closest('.vehicle-list');
-              if (list && list.classList.contains('collapsed')) {
-                  list.closest('.status-column').querySelector('.toggle-column-btn').click();
-              }
-              setTimeout(() => {
-                  foundCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              }, 300);
-          }
+    if (matchingOrders.length > 0) {
+        globalSearchResults.innerHTML = matchingOrders.map(os => `
+            <div class="search-result-item" data-os-id="${os.id}">
+                <p class="font-bold">${os.placa} - ${os.modelo}</p>
+                <p class="text-sm text-gray-600">Status: <span class="font-semibold text-blue-700">${formatStatus(os.status)}</span></p>
+            </div>
+        `).join('');
+        globalSearchResults.classList.remove('hidden');
+    } else {
+        globalSearchResults.innerHTML = '<div class="p-3 text-center text-gray-500">Nenhum veículo encontrado.</div>';
+        globalSearchResults.classList.remove('hidden');
+    }
+  });
+  
+  globalSearchResults.addEventListener('click', (e) => {
+      const resultItem = e.target.closest('.search-result-item');
+      if (resultItem) {
+          const osId = resultItem.dataset.osId;
+          openDetailsModal(osId);
+          globalSearchInput.value = ''; 
+          globalSearchResults.innerHTML = '';
+          globalSearchResults.classList.add('hidden');
       }
   });
+
 
   document.addEventListener('click', (e) => {
     if (e.target.closest('.btn-close-modal') || e.target.id === 'detailsModal') { detailsModal.classList.add('hidden'); }
     if (e.target.closest('.btn-close-modal') || e.target.id === 'osModal') { osModal.classList.add('hidden'); }
+    
+    // Esconde os resultados da busca se clicar fora da área de busca
+    const searchContainer = document.querySelector('.search-container');
+    if (searchContainer && !searchContainer.contains(e.target)) {
+        globalSearchResults.classList.add('hidden');
+    }
   });
 
   detailsModal.addEventListener('click', (e) => {
@@ -806,13 +812,6 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('fileName').textContent = `${filesToUpload.length} arquivo(s) na fila`;
     } else {
       document.getElementById('fileName').textContent = '';
-    }
-  });
-
-  document.addEventListener('click', (e) => {
-    const thumbnailItem = e.target.closest('.thumbnail-item');
-    if (thumbnailItem && thumbnailItem.dataset.index !== undefined) {
-      openLightbox(parseInt(thumbnailItem.dataset.index));
     }
   });
 
