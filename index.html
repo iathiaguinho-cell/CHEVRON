@@ -88,6 +88,7 @@
     <div class="modal-content w-full max-w-lg">
       <div class="modal-header">
         <h2 id="osModalTitle" class="text-2xl font-bold text-gray-800">Nova Ordem de Serviço</h2>
+        <button class="btn-close-modal text-3xl text-gray-400 hover:text-gray-600">&times;</button>
       </div>
       <div class="modal-body">
         <form id="osForm" class="space-y-4">
@@ -154,10 +155,8 @@
   <div id="detailsModal" class="modal fixed inset-0 z-50 hidden items-center justify-center p-4">
     <div class="modal-content w-full max-w-6xl">
       <div class="modal-header">
-        <div class="flex justify-between items-start">
-          <h2 class="text-2xl font-bold text-gray-800">Detalhes da Ordem de Serviço</h2>
-          <button class="btn-close-modal text-3xl text-gray-400 hover:text-gray-600">&times;</button>
-        </div>
+        <h2 class="text-2xl font-bold text-gray-800">Detalhes da Ordem de Serviço</h2>
+        <button class="btn-close-modal text-3xl text-gray-400 hover:text-gray-600">&times;</button>
       </div>
       
       <div class="modal-body">
@@ -220,7 +219,7 @@
                       <p id="fileName" class="text-sm text-gray-500 mt-1 truncate"></p>
                     </div>
                     <button type="submit" class="w-full btn bg-green-600 hover:bg-green-700 text-white px-4 py-2 flex items-center justify-center gap-2">
-                      <i class='bx bx-message-square-add'></i> Adicionar ao Histórico
+                      <i class='bx bx-message-square-add'></i> Adicionar
                     </button>
                   </form>
                   <div id="post-log-actions" class="hidden mt-4 border-t pt-4 space-y-2">
@@ -305,7 +304,7 @@
                                 <input type="date" id="endDate" class="p-2 border rounded w-full">
                             </div>
                             <button id="generateReportBtn" class="btn bg-green-600 text-white">Gerar Relatório</button>
-                            <button id="exportPdfZipBtn" class="btn bg-gray-800 text-white">Exportar PDFs em .ZIP</button>
+                            <button id="exportPdfZipBtn" class="btn bg-gray-800 text-white">Exportar em .ZIP</button>
                         </div>
                     </div>
                     <div id="reportOutput" class="mt-6"></div>
