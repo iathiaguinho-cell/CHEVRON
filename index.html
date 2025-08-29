@@ -55,6 +55,11 @@
             </button>
         </div>
         <div class="flex items-center gap-4">
+          <!-- NOVO CAMPO DE BUSCA GLOBAL -->
+          <div class="relative">
+              <input type="search" id="globalSearchInput" placeholder="Buscar Placa em todo o pátio..." class="p-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-40 sm:w-64">
+              <i class='bx bx-search absolute right-3 top-1/2 -translate-y-1/2 text-gray-400'></i>
+          </div>
           <button id="addOSBtn" class="btn bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 flex items-center gap-2">
             <i class='bx bx-plus-circle'></i><span class="hidden sm:inline">Nova O.S.</span>
           </button>
@@ -267,6 +272,22 @@
         <div class="modal-footer">
             <button id="cancelDeleteBtn" class="btn bg-gray-200 hover:bg-gray-300 text-gray-800">Cancelar</button>
             <button id="confirmDeleteBtn" class="btn bg-red-600 hover:bg-red-700 text-white">Sim, Excluir</button>
+        </div>
+    </div>
+  </div>
+
+  <!-- NOVO MODAL PARA CONFIRMAR EXCLUSÃO DE LOG -->
+  <div id="confirmDeleteLogModal" class="modal fixed inset-0 z-[102] hidden items-center justify-center p-4">
+    <div class="modal-content w-full max-w-md">
+        <div class="modal-header">
+            <h2 class="text-xl font-bold text-red-600 flex items-center gap-2"><i class='bx bxs-error-circle'></i>Confirmar Exclusão de Atualização</h2>
+        </div>
+        <div class="modal-body">
+            <p id="confirmDeleteLogText" class="text-gray-700">Você tem certeza que deseja excluir esta atualização do histórico? Esta ação não pode ser desfeita.</p>
+        </div>
+        <div class="modal-footer">
+            <button id="cancelDeleteLogBtn" class="btn bg-gray-200 hover:bg-gray-300 text-gray-800">Cancelar</button>
+            <button id="confirmDeleteLogBtn" class="btn bg-red-600 hover:bg-red-700 text-white">Sim, Excluir</button>
         </div>
     </div>
   </div>
