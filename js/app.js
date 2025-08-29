@@ -736,7 +736,7 @@ document.addEventListener('DOMContentLoaded', () => {
         USERS = Object.entries(usersData).map(([id, data]) => ({ id, ...data }));
     } else {
         const defaultUsers = {
-            'user-001': { name: 'Thiago Ventura Valencio', role: 'Gestor de Sistema', password: 'thiago' },
+            'user-001': { name: 'Thiago Ventura Valencio', role: 'Gestor de Sistema', password: '1940' },
             'user-002': { name: 'Augusto', role: 'Gestor', password: 'augusto' },
         };
         db.ref('users').set(defaultUsers);
