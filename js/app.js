@@ -91,13 +91,15 @@ document.addEventListener('DOMContentLoaded', () => {
   let appStartTime = Date.now();
 
   const USERS = [
-    { name: 'Augusto', role: 'Gestor', password: 'augusto' },
-    { name: 'William Barbosa', role: 'Atendente', password: 'barboza' },
+    { name: 'Augusto', role: 'Gestor', password: 'jose' },
+    { name: 'William Barbosa', role: 'Atendente', password: '2312' },
     { name: 'Thiago Ventura Valencio', role: 'Atendente', password: '1940' },
     { name: 'Fernando', role: 'Mecânico', password: 'fernando' },
     { name: 'Gustavo', role: 'Mecânico', password: 'gustavo' },
     { name: 'Marcelo', role: 'Mecânico', password: 'marcelo' }
   ];
+
+  const USERS_CAN_DELETE_MEDIA = ['Thiago Ventura Valencio', 'William Barbosa', 'Augusto'];
 
   const STATUS_LIST = [ 'Aguardando-Mecanico', 'Em-Analise', 'Orcamento-Enviado', 'Aguardando-Aprovacao', 'Servico-Autorizado', 'Em-Execucao', 'Finalizado-Aguardando-Retirada', 'Entregue' ];
   const ATTENTION_STATUSES = { 'Aguardando-Mecanico': { label: 'AGUARDANDO MECÂNICO', color: 'yellow', blinkClass: 'blinking-aguardando' }, 'Servico-Autorizado': { label: 'SERVIÇO AUTORIZADO', color: 'green', blinkClass: 'blinking-autorizado' } };
@@ -135,10 +137,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const globalSearchInput = document.getElementById('globalSearchInput');
   const globalSearchResults = document.getElementById('globalSearchResults');
   const timelineContainer = document.getElementById('timelineContainer');
+  const thumbnailGrid = document.getElementById('thumbnail-grid');
   const confirmDeleteLogModal = document.getElementById('confirmDeleteLogModal');
   const confirmDeleteLogText = document.getElementById('confirmDeleteLogText');
   const cancelDeleteLogBtn = document.getElementById('cancelDeleteLogBtn');
   const confirmDeleteLogBtn = document.getElementById('confirmDeleteLogBtn');
+  const confirmDeleteMediaModal = document.getElementById('confirmDeleteMediaModal');
+  const confirmDeleteMediaText = document.getElementById('confirmDeleteMediaText');
+  const cancelDeleteMediaBtn = document.getElementById('cancelDeleteMediaBtn');
+  const confirmDeleteMediaBtn = document.getElementById('confirmDeleteMediaBtn');
 
 
   const formatStatus = (status) => status.replace(/-/g, ' ');
@@ -219,12 +226,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const nextStatus = currentIndex < STATUS_LIST.length - 1 ? STATUS_LIST[currentIndex + 1] : null;
     const prevButton = prevStatus ? `<button data-os-id="${os.id}" data-new-status="${prevStatus}" class="btn-move-status p-2 rounded-full hover:bg-gray-100 transition-colors"><i class='bx bx-chevron-left text-xl text-gray-600'></i></button>` : `<div class="w-10 h-10"></div>`;
     const nextButton = nextStatus ? `<button data-os-id="${os.id}" data-new-status="${nextStatus}" class="btn-move-status p-2 rounded-full hover:bg-gray-100 transition-colors"><i class='bx bx-chevron-right text-xl text-gray-600'></i></button>` : `<div class="w-10 h-10"></div>`;
-    let responsibleInfo = `<p class="text-xs text-gray-500 mt-1">Atendente: ${os.responsible || 'N/D'}</p>`;
-    if (os.status === 'Em-Execucao' && os.responsibleForService) { responsibleInfo = `<p class="text-xs text-red-600 font-medium mt-1">Mecânico: ${os.responsibleForService}</p>`; }
-    else if (os.status === 'Em-Analise' && os.responsibleForBudget) { responsibleInfo = `<p class="text-xs text-purple-600 font-medium mt-1">Orçamento: ${os.responsibleForBudget}</p>`; }
+    const clientInfo = `<p class="text-xs text-gray-500 mt-1">Cliente: ${os.cliente || 'N/D'}</p>`;
     const kmInfo = `<p class="text-xs text-gray-500">KM: ${os.km ? new Intl.NumberFormat('pt-BR').format(os.km) : 'N/A'}</p>`;
     const priorityIndicatorHTML = os.priority ? `<div class="priority-indicator priority-${os.priority}" title="Urgência: ${os.priority}"></div>` : '';
-    return `<div id="${os.id}" class="vehicle-card status-${os.status}" data-os-id="${os.id}">${priorityIndicatorHTML}<div class="flex justify-between items-start"><div class="card-clickable-area cursor-pointer flex-grow"><p class="font-bold text-base text-gray-800">${os.placa}</p><p class="text-sm text-gray-600">${os.modelo}</p><div class="text-xs mt-1">${kmInfo}</div><div class="text-xs">${responsibleInfo}</div></div><div class="flex flex-col -mt-1 -mr-1">${nextButton}${prevButton}</div></div></div>`;
+    return `<div id="${os.id}" class="vehicle-card status-${os.status}" data-os-id="${os.id}">${priorityIndicatorHTML}<div class="flex justify-between items-start"><div class="card-clickable-area cursor-pointer flex-grow"><p class="font-bold text-base text-gray-800">${os.placa}</p><p class="text-sm text-gray-600">${os.modelo}</p><div class="text-xs mt-1">${kmInfo}</div><div class="text-xs">${clientInfo}</div></div><div class="flex flex-col -mt-1 -mr-1">${nextButton}${prevButton}</div></div></div>`;
   };
 
   const renderDeliveredColumn = () => {
@@ -277,6 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
        if (detailsModal.classList.contains('flex') && document.getElementById('logOsId').value === os.id) {
             renderTimeline(os);
+            renderMediaGallery(os);
        }
       updateAttentionPanel();
     });
@@ -423,21 +429,34 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const renderMediaGallery = (os) => {
-    const thumbnailGrid = document.getElementById('thumbnail-grid');
-    const media = os.media || [];
-    lightboxMedia = Object.values(media);
-    thumbnailGrid.innerHTML = lightboxMedia.map((item, index) => {
+    const media = os.media || {};
+    const mediaEntries = Object.entries(media);
+    lightboxMedia = mediaEntries.map(entry => ({...entry[1], key: entry[0]}));
+    
+    thumbnailGrid.innerHTML = mediaEntries.map(([key, item], index) => {
         if (!item || !item.type) return '';
+
+        const canDelete = currentUser && USERS_CAN_DELETE_MEDIA.includes(currentUser.name);
+        const deleteButtonHTML = canDelete 
+            ? `<button class="delete-media-btn" data-os-id="${os.id}" data-media-key="${key}" title="Excluir Mídia"><i class='bx bxs-trash'></i></button>` 
+            : '';
+
         const isImage = item.type.startsWith('image/');
         const isVideo = item.type.startsWith('video/');
         const isPdf = item.type === 'application/pdf';
+        
         let thumbnailContent = `<i class='bx bx-file text-4xl text-gray-500'></i>`;
         if (isImage) { thumbnailContent = `<img src="${item.url}" alt="Imagem ${index + 1}" loading="lazy" class="w-full h-full object-cover">`; }
         else if (isVideo) { thumbnailContent = `<i class='bx bx-play-circle text-4xl text-blue-500'></i>`; }
         else if (isPdf) { thumbnailContent = `<i class='bx bxs-file-pdf text-4xl text-red-500'></i>`; }
-        return `<div class="aspect-square bg-gray-200 rounded-md overflow-hidden cursor-pointer thumbnail-item flex items-center justify-center" data-index="${index}">${thumbnailContent}</div>`;
+
+        return `<div class="thumbnail-container aspect-square bg-gray-200 rounded-md overflow-hidden flex items-center justify-center relative">
+                    ${deleteButtonHTML}
+                    <div class="thumbnail-item w-full h-full cursor-pointer" data-index="${index}">${thumbnailContent}</div>
+                </div>`;
     }).join('');
-    if (lightboxMedia.length === 0) {
+
+    if (mediaEntries.length === 0) {
       thumbnailGrid.innerHTML = `<div class="col-span-full text-center py-8 text-gray-400"><i class='bx bx-image text-4xl mb-2'></i><p class="text-sm">Nenhuma mídia adicionada</p></div>`;
     }
   };
@@ -458,7 +477,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const media = os.media ? Object.values(os.media) : [];
     const photos = media.filter(item => item && item.type.startsWith('image/'));
     const photosHtml = photos.length > 0 ? `<div class="section"><h2>Fotos Anexadas</h2><div class="photo-gallery">${photos.map(photo => `<img src="${photo.url}" alt="Foto da O.S.">`).join('')}</div></div>` : '';
-    const printHtml = `<html><head><title>Ordem de Serviço - ${os.placa}</title><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;margin:0;padding:20px;color:#333}.container{max-width:800px;margin:auto}.header{text-align:center;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:20px}.header h1{margin:0;font-size:24px}.header p{margin:5px 0}.section{margin-bottom:20px;border:1px solid #ccc;border-radius:8px;padding:15px;page-break-inside:avoid}.section h2{margin-top:0;font-size:18px;border-bottom:1px solid #eee;padding-bottom:5px;margin-bottom:10px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid-item strong{display:block;color:#555}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #ddd;padding:8px;text-align:left;font-size:14px}th{background-color:#f2f2f2}.total{text-align:right;font-size:18px;font-weight:bold;margin-top:20px}.footer{text-align:center;margin-top:50px;padding-top:20px;border-top:1px solid #ccc}.signature{margin-top:60px}.signature-line{border-bottom:1px solid #000;width:300px;margin:0 auto}.signature p{margin-top:5px;font-size:14px}.photo-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:10px}.photo-gallery img{width:100%;height:auto;border:1px solid #ddd;border-radius:4px}.dev-signature{margin-top:40px;font-size:12px;color:#888}.dev-signature strong{color:#555}@media print{body{padding:10px}.no-print{display:none}}</style></head><body><div class="container"><div class="header"><h1>CHEVRON Bosch Car Service</h1><p>Ordem de Serviço</p></div><div class="section"><h2>Detalhes da O.S.</h2><div class="grid"><div class="grid-item"><strong>Placa:</strong> ${os.placa}</div><div class="grid-item"><strong>Modelo:</strong> ${os.modelo}</div><div class="grid-item"><strong>Cliente:</strong> ${os.cliente}</div><div class="grid-item"><strong>Telefone:</strong> ${os.telefone||"N/A"}</div><div class="grid-item"><strong>KM:</strong> ${os.km?new Intl.NumberFormat("pt-BR").format(os.km):"N/A"}</div><div class="grid-item"><strong>Data de Abertura:</strong> ${formatDate(os.createdAt)}</div><div class="grid-item"><strong>Atendente:</strong> ${os.responsible||"N/A"}</div></div></div>${os.observacoes?`<div class="section"><h2>Queixa do Cliente / Observações Iniciais</h2><p style="white-space: pre-wrap;">${os.observacoes}</p></div>`:""}<div class="section"><h2>Histórico de Serviços e Peças</h2><table><thead><tr><th>Data/Hora</th><th>Usuário</th><th>Descrição</th><th>Peças</th><th style="text-align: right;">Valor</th></tr></thead><tbody>${timelineHtml||'<tr><td colspan="5" style="text-align: center;">Nenhum registro no histórico.</td></tr>'}</tbody></table><div class="total">Total: R$ ${totalValue.toFixed(2)}</div></div>${photosHtml}<div class="footer"><div class="signature"><div class="signature-line"></div><p>Assinatura do Cliente</p></div><p>Documento gerado em: ${new Date().toLocaleString("pt-BR")}</p></div></div><script>window.onload=function(){window.print();setTimeout(function(){window.close()},100)}<\/script></body></html>`;
+    const printHtml = `<html><head><title>Ordem de Serviço - ${os.placa}</title><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;margin:0;padding:20px;color:#333}.container{max-width:800px;margin:auto}.header{text-align:center;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:20px}.header h1{margin:0;font-size:24px}.header p{margin:5px 0}.section{margin-bottom:20px;border:1px solid #ccc;border-radius:8px;padding:15px;page-break-inside:avoid}.section h2{margin-top:0;font-size:18px;border-bottom:1px solid #eee;padding-bottom:5px;margin-bottom:10px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid-item strong{display:block;color:#555}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #ddd;padding:8px;text-align:left;font-size:14px}th{background-color:#f2f2f2}.total{text-align:right;font-size:18px;font-weight:bold;margin-top:20px}.footer{text-align:center;margin-top:50px;padding-top:20px;border-top:1px solid #ccc}.signature{margin-top:60px}.signature-line{border-bottom:1px solid #000;width:300px;margin:0 auto}.signature p{margin-top:5px;font-size:14px}.photo-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:10px}.photo-gallery img{width:100%;height:auto;border:1px solid #ddd;border-radius:4px}.dev-signature{margin-top:40px;font-size:12px;color:#888;text-align:center}@media print{body{padding:10px}.no-print{display:none}}</style></head><body><div class="container"><div class="header"><h1>CHEVRON Bosch Car Service</h1><p>Ordem de Serviço</p></div><div class="section"><h2>Detalhes da O.S.</h2><div class="grid"><div class="grid-item"><strong>Placa:</strong> ${os.placa}</div><div class="grid-item"><strong>Modelo:</strong> ${os.modelo}</div><div class="grid-item"><strong>Cliente:</strong> ${os.cliente}</div><div class="grid-item"><strong>Telefone:</strong> ${os.telefone||"N/A"}</div><div class="grid-item"><strong>KM:</strong> ${os.km?new Intl.NumberFormat("pt-BR").format(os.km):"N/A"}</div><div class="grid-item"><strong>Data de Abertura:</strong> ${formatDate(os.createdAt)}</div><div class="grid-item"><strong>Atendente:</strong> ${os.responsible||"N/A"}</div></div></div>${os.observacoes?`<div class="section"><h2>Queixa do Cliente / Observações Iniciais</h2><p style="white-space: pre-wrap;">${os.observacoes}</p></div>`:""}<div class="section"><h2>Histórico de Serviços e Peças</h2><table><thead><tr><th>Data/Hora</th><th>Usuário</th><th>Descrição</th><th>Peças</th><th style="text-align: right;">Valor</th></tr></thead><tbody>${timelineHtml||'<tr><td colspan="5" style="text-align: center;">Nenhum registro no histórico.</td></tr>'}</tbody></table><div class="total">Total: R$ ${totalValue.toFixed(2)}</div></div>${photosHtml}<div class="footer"><div class="signature"><div class="signature-line"></div><p>Assinatura do Cliente</p></div><p>Documento gerado em: ${new Date().toLocaleString("pt-BR")}</p><div class="dev-signature">Desenvolvido com 🤖 - por thIAguinho Soluções</div></div></div><script>window.onload=function(){window.print();setTimeout(function(){window.close()},100)}<\/script></body></html>`;
     const printWindow = window.open('', '_blank');
     printWindow.document.write(printHtml);
     printWindow.document.close();
@@ -584,24 +603,35 @@ document.addEventListener('DOMContentLoaded', () => {
       }
   });
 
-  // Listener de clique geral para fechar modais E abrir lightbox
   document.addEventListener('click', (e) => {
-    // Fecha modais
     if (e.target.closest('.btn-close-modal') || e.target.id === 'detailsModal') { detailsModal.classList.add('hidden'); }
     if (e.target.closest('.btn-close-modal') || e.target.id === 'osModal') { osModal.classList.add('hidden'); }
     
-    // Esconde resultados da busca ao clicar fora
     const searchContainer = document.querySelector('.search-container');
     if (searchContainer && !searchContainer.contains(e.target)) {
         globalSearchResults.classList.add('hidden');
     }
-
-    // **FIX**: Abre o lightbox ao clicar em uma miniatura
-    const thumbnailItem = e.target.closest('.thumbnail-item');
-    if (thumbnailItem && thumbnailItem.dataset.index !== undefined) {
-      openLightbox(parseInt(thumbnailItem.dataset.index));
-    }
   });
+  
+  thumbnailGrid.addEventListener('click', (e) => {
+      const thumbnailItem = e.target.closest('.thumbnail-item');
+      const deleteButton = e.target.closest('.delete-media-btn');
+
+      if (deleteButton) {
+          e.stopPropagation();
+          const { osId, mediaKey } = deleteButton.dataset;
+          confirmDeleteMediaBtn.dataset.osId = osId;
+          confirmDeleteMediaBtn.dataset.mediaKey = mediaKey;
+          confirmDeleteMediaModal.classList.remove('hidden');
+          confirmDeleteMediaModal.classList.add('flex');
+          return;
+      }
+      
+      if (thumbnailItem && thumbnailItem.dataset.index !== undefined) {
+          openLightbox(parseInt(thumbnailItem.dataset.index));
+      }
+  });
+
 
   detailsModal.addEventListener('click', (e) => {
     const exportBtn = e.target.closest('#exportOsBtn');
@@ -669,9 +699,9 @@ document.addEventListener('DOMContentLoaded', () => {
             );
             const mediaResults = await Promise.all(mediaPromises);
             const mediaRef = db.ref(`serviceOrders/${osId}/media`);
-            const snapshot = await mediaRef.once('value');
-            const currentMedia = snapshot.val() || [];
-            await mediaRef.set([...currentMedia, ...mediaResults]);
+            mediaResults.forEach(result => {
+                mediaRef.push().set(result);
+            });
         }
         const logsRef = db.ref(`serviceOrders/${osId}/logs`);
         const newLogRef = logsRef.push();
@@ -798,6 +828,27 @@ document.addEventListener('DOMContentLoaded', () => {
       confirmDeleteLogModal.classList.remove('flex');
   });
 
+  confirmDeleteMediaBtn.addEventListener('click', async () => {
+    const { osId, mediaKey } = confirmDeleteMediaBtn.dataset;
+    if (osId && mediaKey) {
+        try {
+            await db.ref(`serviceOrders/${osId}/media/${mediaKey}`).remove();
+            showNotification('Mídia excluída com sucesso.', 'success');
+        } catch (error) {
+            console.error("Erro ao excluir mídia:", error);
+            showNotification('Falha ao excluir a mídia.', 'error');
+        } finally {
+            confirmDeleteMediaModal.classList.add('hidden');
+            confirmDeleteMediaModal.classList.remove('flex');
+        }
+    }
+  });
+
+  cancelDeleteMediaBtn.addEventListener('click', () => {
+      confirmDeleteMediaModal.classList.add('hidden');
+      confirmDeleteMediaModal.classList.remove('flex');
+  });
+
   openCameraBtn.addEventListener('click', () => {
     mediaInput.setAttribute('accept', 'image/*');
     mediaInput.setAttribute('capture', 'camera');
@@ -844,4 +895,3 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- INICIALIZAÇÃO DO LOGIN ---
   initializeLoginScreen();
 });
-
