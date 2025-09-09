@@ -19,8 +19,8 @@ body {
 .vehicle-list { 
   flex-grow: 1; 
   transition: all 0.3s ease-in-out; 
-  max-height: 1000px; 
-  overflow: hidden;
+  max-height: 65vh; /* Define uma altura máxima baseada na tela */
+  overflow-y: auto;   /* Habilita a rolagem vertical quando necessário */
   padding: 0 8px 8px 8px;
 }
 
@@ -28,6 +28,7 @@ body {
   max-height: 0; 
   margin-top: 0 !important;
   padding: 0 !important;
+  overflow: hidden;
 }
 
 .vehicle-card {
@@ -389,4 +390,19 @@ body {
 
 .priority-indicator.priority-verde {
   background-color: #22c55e; /* green-500 */
+}
+
+/* ESTILIZAÇÃO DA BARRA DE ROLAGEM (PARA NAVEGADORES WEBKIT) */
+.vehicle-list::-webkit-scrollbar {
+  width: 6px;
+}
+.vehicle-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+.vehicle-list::-webkit-scrollbar-thumb {
+  background-color: #cbd5e0; /* gray-400 */
+  border-radius: 20px;
+}
+.vehicle-list::-webkit-scrollbar-thumb:hover {
+  background-color: #a0aec0; /* gray-500 */
 }
