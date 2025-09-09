@@ -99,7 +99,7 @@ body {
   padding: 1rem 1.5rem;
   display: flex;
   justify-content: flex-end;
-  flex-shrink: 0;
+  align-items: center;
 }
 
 /* =============== BOTÕES =============== */
@@ -175,7 +175,7 @@ body {
   color: white;
 }
 
-/* =============== PAINEL DE ALERTA =============== */
+/* =============== PAINEL de ALERTA =============== */
 #attention-panel-container { 
   transition: max-height 0.5s ease-in-out, padding 0.5s ease-in-out; 
   max-height: 500px; 
@@ -223,6 +223,43 @@ body {
   max-height: 80vh; 
   max-width: 80vw; 
 }
+
+/* =============== GALERIA DE MÍDIA E EXCLUSÃO =============== */
+.thumbnail-container {
+    position: relative;
+}
+
+.delete-media-btn {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    z-index: 10;
+    background-color: #ef4444; /* red-500 */
+    color: white;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    opacity: 0;
+    transition: all 0.2s ease-in-out;
+    transform: scale(0.8);
+}
+
+.thumbnail-container:hover .delete-media-btn {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.delete-media-btn:hover {
+    background-color: #dc2626; /* red-600 */
+    transform: scale(1.1);
+}
+
 
 /* =============== BUSCA UNIVERSAL =============== */
 .search-result-item {
