@@ -151,14 +151,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const formatStatus = (status) => status.replace(/-/g, ' ');
 
   const logoutUser = () => {
-    localStorage.removeItem('currentUser');
+    localStorage.removeItem('currentUserSession');
     location.reload();
   };
 
   const scheduleDailyLogout = () => {
     const now = new Date();
     const logoutTime = new Date();
-
     logoutTime.setHours(19, 0, 0, 0);
 
     if (now > logoutTime) {
@@ -166,11 +165,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const timeUntilLogout = logoutTime.getTime() - now.getTime();
-
-    console.log(`Logout automático agendado para: ${logoutTime.toLocaleString('pt-BR')}`);
+    console.log(`Logout agendado via setTimeout para: ${logoutTime.toLocaleString('pt-BR')}`);
 
     setTimeout(() => {
-      if (localStorage.getItem('currentUser')) {
+      if (localStorage.getItem('currentUserSession')) {
         showNotification('Sessão encerrada por segurança.', 'success');
         setTimeout(logoutUser, 2000);
       }
@@ -178,24 +176,53 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const loginUser = (user) => {
+    const sessionData = {
+      user: user,
+      loginTime: new Date().toISOString()
+    };
+    localStorage.setItem('currentUserSession', JSON.stringify(sessionData));
+    
     currentUser = user;
-    localStorage.setItem('currentUser', JSON.stringify(user));
     document.getElementById('currentUserName').textContent = user.name;
     userScreen.classList.add('hidden');
     app.classList.remove('hidden');
+    
     initializeKanban();
     listenToServiceOrders();
     listenToNotifications();
-    scheduleDailyLogout();
+    scheduleDailyLogout(); // Mantém o agendamento para quem está com a tela aberta
   };
 
   const initializeLoginScreen = () => {
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
-        loginUser(JSON.parse(storedUser));
+    const storedSession = localStorage.getItem('currentUserSession');
+    
+    if (storedSession) {
+        const sessionData = JSON.parse(storedSession);
+        const loginTime = new Date(sessionData.loginTime);
+
+        // Calcula o último horário de corte (19h)
+        const now = new Date();
+        const lastCutoff = new Date();
+        lastCutoff.setHours(19, 0, 0, 0);
+
+        // Se agora é antes das 19h de hoje, o último corte foi ontem às 19h
+        if (now < lastCutoff) {
+            lastCutoff.setDate(lastCutoff.getDate() - 1);
+        }
+
+        // Se o login foi feito antes do último corte, a sessão é inválida
+        if (loginTime < lastCutoff) {
+            console.log("Sessão expirada. Realizando logout forçado.");
+            logoutUser();
+            return; // Interrompe a execução para forçar o reload
+        }
+        
+        // Se a sessão é válida, prossegue com o login
+        loginUser(sessionData.user);
         return;
     }
 
+    // Se não há sessão, exibe a tela de login
     userScreen.classList.remove('hidden');
     app.classList.add('hidden');
     userSelect.innerHTML = '<option value="">Selecione seu usuário...</option>';
