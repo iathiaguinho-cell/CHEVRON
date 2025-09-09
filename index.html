@@ -58,8 +58,7 @@
         <div class="flex-grow max-w-md relative search-container">
             <input type="search" id="globalSearchInput" placeholder="Buscar por Placa..." class="w-full p-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
             <div id="globalSearchResults" class="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-b-md shadow-lg z-50 hidden max-h-60 overflow-y-auto">
-                <!-- Search results will be injected here by JS -->
-            </div>
+                </div>
         </div>
 
         <div class="flex items-center gap-4">
@@ -139,6 +138,7 @@
         </form>
       </div>
       <div class="modal-footer">
+        <span class="text-xs text-gray-500 mr-auto">Desenvolvido com 🤖 - por thIAguinho Soluções</span>
         <button type="button" class="btn-close-modal btn bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2">Cancelar</button>
         <button type="submit" form="osForm" class="btn bg-blue-600 hover:bg-blue-700 text-white px-4 py-2">Salvar</button>
       </div>
@@ -294,6 +294,20 @@
     </div>
   </div>
 
+  <div id="confirmDeleteMediaModal" class="modal fixed inset-0 z-[101] hidden items-center justify-center p-4">
+    <div class="modal-content w-full max-w-md">
+        <div class="modal-header">
+            <h2 class="text-xl font-bold text-red-600 flex items-center gap-2"><i class='bx bxs-error-circle'></i>Confirmar Exclusão de Mídia</h2>
+        </div>
+        <div class="modal-body">
+            <p id="confirmDeleteMediaText" class="text-gray-700">Você tem certeza que deseja excluir esta mídia permanentemente?</p>
+        </div>
+        <div class="modal-footer">
+            <button id="cancelDeleteMediaBtn" class="btn bg-gray-200 hover:bg-gray-300 text-gray-800">Cancelar</button>
+            <button id="confirmDeleteMediaBtn" class="btn bg-red-600 hover:bg-red-700 text-white">Sim, Excluir</button>
+        </div>
+    </div>
+  </div>
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
